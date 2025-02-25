@@ -14,12 +14,12 @@ export default function CardSlot({ position, card, onRemove }: CardSlotProps) {
   const cardQuery = useQuery({
     queryKey: ["/api/cards", card?.cardId],
     queryFn: async () => {
-      if (!card) return null;
+      if (!card?.cardId) return null;
       const res = await fetch(`/api/cards/${card.cardId}`);
       if (!res.ok) throw new Error("Failed to load card");
       return res.json() as Promise<PokemonCard>;
     },
-    enabled: !!card
+    enabled: !!card?.cardId // Only run query if we have a cardId
   });
 
   return (
@@ -28,7 +28,7 @@ export default function CardSlot({ position, card, onRemove }: CardSlotProps) {
       className="aspect-[2.5/3.5] relative group transition-all duration-200 hover:shadow-lg"
     >
       {cardQuery.isLoading ? (
-        <div className="w-full h-full flex items-center justify-center">
+        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
           Loading card...
         </div>
       ) : cardQuery.data ? (
