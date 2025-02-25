@@ -1,0 +1,114 @@
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useParams } from "wouter";
+import AlbumGrid from "@/components/album/AlbumGrid";
+import CardSelector from "@/components/album/CardSelector";
+import PageControls from "@/components/album/PageControls";
+import LayoutSelector from "@/components/album/LayoutSelector";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { useState } from "react";
+import type { Album, Page } from "@shared/schema";
+
+export default function AlbumPage() {
+  const { id } = useParams();
+  const albumId = parseInt(id);
+  const [currentPage, setCurrentPage] = useState(1);
+  const { toast } = useToast();
+
+  const albumQuery = useQuery({
+    queryKey: ["/api/albums", albumId],
+    queryFn: async () => {
+      const res = await fetch(`/api/albums/${albumId}`);
+      if (!res.ok) throw new Error("Failed to load album");
+      return res.json() as Promise<Album>;
+    }
+  });
+
+  const pageQuery = useQuery({
+    queryKey: ["/api/pages", albumId, currentPage],
+    queryFn: async () => {
+      const res = await fetch(`/api/albums/${albumId}/pages/${currentPage}`);
+      if (res.status === 404) return null;
+      if (!res.ok) throw new Error("Failed to load page");
+      return res.json() as Promise<Page>;
+    }
+  });
+
+  const createPage = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/pages", {
+        albumId,
+        pageNumber: currentPage,
+        cards: new Array(albumQuery.data?.gridSize || 9).fill(null)
+      });
+      return res.json() as Promise<Page>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pages", albumId, currentPage] });
+    }
+  });
+
+  const updateGridSize = useMutation({
+    mutationFn: async (gridSize: number) => {
+      const res = await apiRequest("PATCH", `/api/albums/${albumId}/grid-size`, {
+        gridSize
+      });
+      return res.json() as Promise<Album>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/albums", albumId] });
+      toast({
+        title: "Layout updated",
+        description: "Album grid size has been updated"
+      });
+    }
+  });
+
+  if (albumQuery.isLoading) {
+    return <div>Loading album...</div>;
+  }
+
+  if (!albumQuery.data) {
+    return <div>Album not found</div>;
+  }
+
+  const page = pageQuery.data;
+  const needsPageCreation = pageQuery.data === null;
+
+  return (
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">{albumQuery.data.name}</h1>
+          <LayoutSelector
+            currentSize={albumQuery.data.gridSize}
+            onSelect={(size) => updateGridSize.mutate(size)}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
+          <div className="space-y-4">
+            {needsPageCreation ? (
+              <Button onClick={() => createPage.mutate()}>
+                Create Page {currentPage}
+              </Button>
+            ) : (
+              <AlbumGrid
+                gridSize={albumQuery.data.gridSize}
+                cards={page?.cards || []}
+                pageId={page?.id || 0}
+              />
+            )}
+            <PageControls
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+
+          <CardSelector />
+        </div>
+      </div>
+    </div>
+  );
+}
