@@ -36,7 +36,11 @@ export default function CardSlot({ position, card, onRemove }: CardSlotProps) {
       data-position={position}
       className={`aspect-[2.5/3.5] relative group transition-all duration-200 hover:shadow-lg ${isOver ? 'ring-2 ring-primary' : ''}`}
     >
-      {cardQuery.data ? (
+      {cardQuery.isLoading ? (
+        <div className="w-full h-full flex items-center justify-center">
+          Loading card...
+        </div>
+      ) : cardQuery.data ? (
         <>
           <img
             src={cardQuery.data.images.small}

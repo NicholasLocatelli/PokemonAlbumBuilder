@@ -1,7 +1,7 @@
 import { useDrop } from 'react-dnd';
 import CardSlot from './CardSlot';
 import { useMutation } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import type { PokemonCard } from '@shared/schema';
 
 interface AlbumGridProps {
@@ -17,6 +17,9 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
         cards: newCards
       });
       return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/pages"] });
     }
   });
 
