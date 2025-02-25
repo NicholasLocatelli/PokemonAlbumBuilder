@@ -67,7 +67,7 @@ export class MemStorage implements IStorage {
   async updatePageCards(id: number, cards: Array<{position: number; cardId: string} | null>): Promise<Page> {
     const page = this.pages.get(id);
     if (!page) throw new Error("Page not found");
-    
+
     const updatedPage = { ...page, cards };
     this.pages.set(id, updatedPage);
     return updatedPage;

@@ -19,9 +19,9 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
       return res.json();
     },
     onSuccess: (_, variables) => {
-      // Invalidate the specific page query to trigger a refresh
+      // Use the same query key pattern as in the page component
       queryClient.invalidateQueries({ 
-        queryKey: ["/api/pages", pageId]
+        queryKey: [`/api/albums/${pageId}/pages`]
       });
     }
   });

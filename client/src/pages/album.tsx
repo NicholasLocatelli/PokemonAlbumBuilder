@@ -17,7 +17,7 @@ export default function AlbumPage() {
   const { toast } = useToast();
 
   const albumQuery = useQuery({
-    queryKey: ["/api/albums", albumId],
+    queryKey: [`/api/albums/${albumId}`],
     queryFn: async () => {
       const res = await fetch(`/api/albums/${albumId}`);
       if (!res.ok) throw new Error("Failed to load album");
@@ -26,7 +26,7 @@ export default function AlbumPage() {
   });
 
   const pageQuery = useQuery({
-    queryKey: ["/api/pages", albumId, currentPage],
+    queryKey: [`/api/albums/${albumId}/pages/${currentPage}`],
     queryFn: async () => {
       const res = await fetch(`/api/albums/${albumId}/pages/${currentPage}`);
       if (res.status === 404) return null;
@@ -45,7 +45,9 @@ export default function AlbumPage() {
       return res.json() as Promise<Page>;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/pages", albumId, currentPage] });
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/albums/${albumId}/pages/${currentPage}`]
+      });
       toast({
         title: "Page created",
         description: `Created page ${currentPage}`
@@ -61,7 +63,7 @@ export default function AlbumPage() {
       return res.json() as Promise<Album>;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/albums", albumId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/albums/${albumId}`] });
       toast({
         title: "Layout updated",
         description: "Album grid size has been updated"
