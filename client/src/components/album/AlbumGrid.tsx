@@ -6,7 +6,7 @@ import type { PokemonCard } from '@shared/schema';
 
 interface AlbumGridProps {
   gridSize: number;
-  cards: Array<{position: number; cardId: string} | null>;
+  cards: Array<{position: number; cardId: string; albumId?: string} | null>;
   pageId: number;
 }
 
@@ -18,10 +18,15 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
       });
       return res.json();
     },
-    onSuccess: (_, variables) => {
-      // Use the same query key pattern as in the page component
+    onSuccess: () => {
+      // Get the albumId from the current cards
+      const albumId = cards[0]?.albumId || pageId;
+      // Find the current page number from the first card's position
+      const pageNumber = Math.floor((cards[0]?.position || 0) / gridSize) + 1;
+
+      // Invalidate the specific page query
       queryClient.invalidateQueries({ 
-        queryKey: [`/api/albums/${pageId}/pages`]
+        queryKey: [`/api/albums/${albumId}/pages/${pageNumber}`]
       });
     }
   });
@@ -51,7 +56,8 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
       const positionIndex = parseInt(position);
       newCards[positionIndex] = {
         position: positionIndex,
-        cardId: item.card.id
+        cardId: item.card.id,
+        albumId: cards[0]?.albumId // added albumId
       };
 
       updateCards.mutate(newCards);
