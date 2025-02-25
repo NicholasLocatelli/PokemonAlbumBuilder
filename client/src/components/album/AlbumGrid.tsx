@@ -21,7 +21,7 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
     onSuccess: (_, variables) => {
       // Invalidate the specific page query to trigger a refresh
       queryClient.invalidateQueries({ 
-        queryKey: ["/api/pages"]
+        queryKey: ["/api/pages", pageId]
       });
     }
   });
@@ -37,13 +37,23 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
       const position = element?.closest('[data-position]')?.getAttribute('data-position');
       if (!position) return;
 
-      // Create a new array with all existing cards
-      const newCards = [...cards];
-      // Update only the specific position where the card was dropped
-      newCards[parseInt(position)] = {
-        position: parseInt(position),
+      // Create a copy of the current cards array
+      const newCards = Array(gridSize).fill(null);
+
+      // Copy all existing cards to maintain their positions
+      cards.forEach((card, index) => {
+        if (card) {
+          newCards[index] = { ...card };
+        }
+      });
+
+      // Update the specific position with the new card
+      const positionIndex = parseInt(position);
+      newCards[positionIndex] = {
+        position: positionIndex,
         cardId: item.card.id
       };
+
       updateCards.mutate(newCards);
     },
     collect: (monitor) => ({
