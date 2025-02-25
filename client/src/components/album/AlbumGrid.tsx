@@ -25,7 +25,7 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
     }
   });
 
-  const [, drop] = useDrop(() => ({
+  const [{ isOver }, drop] = useDrop(() => ({
     accept: 'POKEMON_CARD',
     drop: (item: { card: PokemonCard }, monitor) => {
       const clientOffset = monitor.getClientOffset();
@@ -41,7 +41,10 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
         cardId: item.card.id
       };
       updateCards.mutate(newCards);
-    }
+    },
+    collect: (monitor) => ({
+      isOver: monitor.isOver()
+    })
   }));
 
   const gridCols = gridSize === 4 ? 'grid-cols-2' :
@@ -51,7 +54,7 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
   return (
     <div
       ref={drop}
-      className={`grid ${gridCols} gap-6 bg-card p-8 rounded-lg shadow-lg min-h-[600px] border-2 border-dashed border-primary/20`}
+      className={`grid ${gridCols} gap-6 bg-card p-8 rounded-lg shadow-lg min-h-[600px] border-2 ${isOver ? 'border-primary' : 'border-primary/20'} border-dashed transition-colors duration-200`}
     >
       {Array.from({ length: gridSize }).map((_, i) => (
         <CardSlot
