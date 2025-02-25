@@ -6,13 +6,13 @@ import PageControls from "@/components/album/PageControls";
 import LayoutSelector from "@/components/album/LayoutSelector";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState } from "react";
 import type { Album, Page } from "@shared/schema";
 
 export default function AlbumPage() {
   const { id } = useParams();
-  const albumId = parseInt(id);
+  const albumId = parseInt(id || "0");
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
 
@@ -46,6 +46,10 @@ export default function AlbumPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/pages", albumId, currentPage] });
+      toast({
+        title: "Page created",
+        description: `Created page ${currentPage}`
+      });
     }
   });
 
@@ -66,11 +70,19 @@ export default function AlbumPage() {
   });
 
   if (albumQuery.isLoading) {
-    return <div>Loading album...</div>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        Loading album...
+      </div>
+    );
   }
 
   if (!albumQuery.data) {
-    return <div>Album not found</div>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        Album not found
+      </div>
+    );
   }
 
   const page = pageQuery.data;
@@ -90,9 +102,12 @@ export default function AlbumPage() {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
           <div className="space-y-4">
             {needsPageCreation ? (
-              <Button onClick={() => createPage.mutate()}>
-                Create Page {currentPage}
-              </Button>
+              <div className="bg-card p-8 rounded-lg text-center">
+                <p className="text-lg mb-4">Page {currentPage} hasn't been created yet</p>
+                <Button onClick={() => createPage.mutate()}>
+                  Create Page {currentPage}
+                </Button>
+              </div>
             ) : (
               <AlbumGrid
                 gridSize={albumQuery.data.gridSize}
