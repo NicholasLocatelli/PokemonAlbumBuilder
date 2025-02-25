@@ -51,7 +51,7 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
   return (
     <div
       ref={drop}
-      className={`grid ${gridCols} gap-4 bg-card p-6 rounded-lg`}
+      className={`grid ${gridCols} gap-6 bg-card p-8 rounded-lg shadow-lg min-h-[600px] border-2 border-dashed border-primary/20`}
     >
       {Array.from({ length: gridSize }).map((_, i) => (
         <CardSlot

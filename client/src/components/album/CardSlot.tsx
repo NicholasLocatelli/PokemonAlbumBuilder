@@ -25,14 +25,14 @@ export default function CardSlot({ position, card, onRemove }: CardSlotProps) {
   return (
     <Card
       data-position={position}
-      className="aspect-[2.5/3.5] relative group"
+      className="aspect-[2.5/3.5] relative group transition-all duration-200 hover:shadow-lg"
     >
       {cardQuery.data ? (
         <>
           <img
             src={cardQuery.data.images.small}
             alt={cardQuery.data.name}
-            className="w-full h-full object-contain"
+            className="w-full h-full object-contain rounded-lg"
           />
           <Button
             variant="destructive"
@@ -44,8 +44,8 @@ export default function CardSlot({ position, card, onRemove }: CardSlotProps) {
           </Button>
         </>
       ) : (
-        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-          Empty Slot
+        <div className="w-full h-full flex items-center justify-center border-2 border-dashed border-primary/20 rounded-lg text-muted-foreground hover:border-primary/40 transition-colors">
+          Drop card here
         </div>
       )}
     </Card>
