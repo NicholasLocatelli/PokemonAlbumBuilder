@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { PokemonCard } from "@shared/schema";
-import { useDrop } from 'react-dnd';
 
 interface CardSlotProps {
   position: number;
@@ -23,18 +22,10 @@ export default function CardSlot({ position, card, onRemove }: CardSlotProps) {
     enabled: !!card
   });
 
-  const [{ isOver }, drop] = useDrop({
-    accept: 'POKEMON_CARD',
-    collect: (monitor) => ({
-      isOver: monitor.isOver()
-    })
-  });
-
   return (
     <Card
-      ref={drop}
       data-position={position}
-      className={`aspect-[2.5/3.5] relative group transition-all duration-200 hover:shadow-lg ${isOver ? 'ring-2 ring-primary' : ''}`}
+      className="aspect-[2.5/3.5] relative group transition-all duration-200 hover:shadow-lg"
     >
       {cardQuery.isLoading ? (
         <div className="w-full h-full flex items-center justify-center">
@@ -57,7 +48,7 @@ export default function CardSlot({ position, card, onRemove }: CardSlotProps) {
           </Button>
         </>
       ) : (
-        <div className={`w-full h-full flex items-center justify-center border-2 border-dashed ${isOver ? 'border-primary bg-primary/5' : 'border-primary/20'} rounded-lg text-muted-foreground hover:border-primary/40 transition-colors`}>
+        <div className="w-full h-full flex items-center justify-center border-2 border-dashed border-primary/20 rounded-lg text-muted-foreground hover:border-primary/40 transition-colors">
           Drop card here
         </div>
       )}

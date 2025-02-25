@@ -23,7 +23,7 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
     }
   });
 
-  const [{ isOver }, drop] = useDrop({
+  const [{ isOver }, drop] = useDrop(() => ({
     accept: 'POKEMON_CARD',
     drop: (item: { card: PokemonCard }, monitor) => {
       const clientOffset = monitor.getClientOffset();
@@ -45,7 +45,7 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
     collect: (monitor) => ({
       isOver: monitor.isOver()
     })
-  });
+  }));
 
   const gridCols = gridSize === 4 ? 'grid-cols-2' :
                   gridSize === 9 ? 'grid-cols-3' :
