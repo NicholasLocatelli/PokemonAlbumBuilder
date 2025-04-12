@@ -75,11 +75,17 @@ export class MemStorage implements IStorage {
 
   async searchCards(query: string): Promise<PokemonCard[]> {
     const response = await fetch(
-      `https://api.pokemontcg.io/v2/cards?q=name:${query}*`
+      `https://api.pokemontcg.io/v2/cards?q=name:${encodeURIComponent(query)}*`
     );
     const data = await response.json();
-    const cards = data.data as PokemonCard[];
-    
+
+    // Ensure 'data' exists and is an array
+    const cards = data?.data || [];
+    if (!Array.isArray(cards)) {
+      console.error("Unexpected API response format:", data);
+      return []
+    }
+        
     // Cache the cards
     cards.forEach(card => this.cardCache.set(card.id, card));
     
