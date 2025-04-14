@@ -1,4 +1,5 @@
 import { useDrop } from 'react-dnd';
+import { useState, useEffect } from 'react';
 import CardSlot from './CardSlot';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -14,18 +15,41 @@ interface AlbumGridProps {
 export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
   const { id: albumId } = useParams();
   
-  // Create a fixed-length array, filling with nulls for any missing positions
-  const normalizedCards = Array(gridSize).fill(null).map((_, index) => {
-    return cards.find(card => card && card.position === index) || null;
-  });
+  // Local state for tracking cards - we'll initialize it from props
+  const [localCards, setLocalCards] = useState<Array<{position: number; cardId: string} | null>>(
+    Array(gridSize).fill(null)
+  );
   
-  console.log('Normalized cards:', JSON.stringify(normalizedCards));
+  // Initialize local cards from server data when props change
+  useEffect(() => {
+    // Create a blank array of the correct size
+    const newCards = Array(gridSize).fill(null);
+    
+    // Fill in known cards from the server data
+    if (cards && cards.length > 0) {
+      cards.forEach(card => {
+        if (card && typeof card.position === 'number' && card.position < gridSize) {
+          newCards[card.position] = card;
+        }
+      });
+    }
+    
+    setLocalCards(newCards);
+    console.log('Cards initialized:', JSON.stringify(newCards));
+  }, [cards, gridSize]);
   
   // Update cards on the server
   const updateCards = useMutation({
     mutationFn: async (updatedCards: Array<{position: number; cardId: string} | null>) => {
-      console.log('Sending cards update:', JSON.stringify(updatedCards));
-      const res = await apiRequest("PATCH", `/api/pages/${pageId}/cards`, { cards: updatedCards });
+      // Filter out null values for the API request
+      const filteredCards = updatedCards
+        .map((card, index) => card ? { ...card, position: index } : null)
+        .filter(card => card !== null);
+      
+      console.log('Sending cards update:', JSON.stringify(filteredCards));
+      const res = await apiRequest("PATCH", `/api/pages/${pageId}/cards`, { 
+        cards: filteredCards 
+      });
       return res.json();
     },
     onSuccess: () => {
@@ -53,21 +77,29 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
       const position = parseInt(positionAttr);
       
       // Create a new cards array with the dropped card in the correct position
-      const newCards = [...normalizedCards];
+      const newCards = [...localCards];
       newCards[position] = { position, cardId: item.card.id };
       
-      // Update the server with the new array
+      // Update local state first for a responsive UI
+      setLocalCards(newCards);
+      
+      // Then update the server
       updateCards.mutate(newCards);
     },
     collect: (monitor) => ({
       isOver: monitor.isOver()
     })
-  }));
+  }), [localCards]);
 
   // Handle removing a card from a slot
   const handleCardRemove = (position: number) => {
-    const newCards = [...normalizedCards];
+    const newCards = [...localCards];
     newCards[position] = null;
+    
+    // Update local state first
+    setLocalCards(newCards);
+    
+    // Then update the server
     updateCards.mutate(newCards);
   };
 
@@ -80,7 +112,7 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
       ref={drop}
       className={`grid ${gridCols} gap-6 bg-card p-8 rounded-lg shadow-lg min-h-[600px] border-2 ${isOver ? 'border-primary' : 'border-primary/20'} border-dashed transition-colors duration-200`}
     >
-      {normalizedCards.map((card, i) => (
+      {localCards.map((card, i) => (
         <CardSlot
           key={i}
           position={i}
