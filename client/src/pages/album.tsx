@@ -26,7 +26,7 @@ export default function AlbumPage() {
   });
 
   const pageQuery = useQuery({
-    queryKey: [`/api/albums/${albumId}/pages/${currentPage}`],
+    queryKey: [`/api/albums/${albumId}/pages`, currentPage],
     queryFn: async () => {
       const res = await fetch(`/api/albums/${albumId}/pages/${currentPage}`);
       if (res.status === 404) return null;
@@ -46,7 +46,7 @@ export default function AlbumPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
-        queryKey: [`/api/albums/${albumId}/pages/${currentPage}`]
+        queryKey: [`/api/albums/${albumId}/pages`, currentPage]
       });
       toast({
         title: "Page created",
