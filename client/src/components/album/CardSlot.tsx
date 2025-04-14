@@ -11,13 +11,19 @@ interface CardSlotProps {
 }
 
 export default function CardSlot({ position, card, onRemove }: CardSlotProps) {
+  // Debug the card prop to ensure we're getting proper data
+  console.log(`CardSlot ${position} rendering with card:`, card);
+  
   const cardQuery = useQuery({
     queryKey: ["/api/cards", card?.cardId],
     queryFn: async () => {
       if (!card?.cardId) return null;
+      console.log(`Fetching card with ID: ${card.cardId}`);
       const res = await fetch(`/api/cards/${card.cardId}`);
       if (!res.ok) throw new Error("Failed to load card");
-      return res.json() as Promise<PokemonCard>;
+      const data = await res.json() as PokemonCard;
+      console.log(`Loaded card data:`, data);
+      return data;
     },
     enabled: !!card?.cardId // Only run query if we have a cardId
   });
@@ -42,7 +48,10 @@ export default function CardSlot({ position, card, onRemove }: CardSlotProps) {
             variant="destructive"
             size="icon"
             className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={onRemove}
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent event bubbling
+              onRemove();
+            }}
           >
             <X className="h-4 w-4" />
           </Button>

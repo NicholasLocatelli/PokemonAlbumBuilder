@@ -3,6 +3,7 @@ import CardSlot from './CardSlot';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import type { PokemonCard } from '@shared/schema';
+import { useParams } from 'wouter';
 
 interface AlbumGridProps {
   gridSize: number;
@@ -11,17 +12,25 @@ interface AlbumGridProps {
 }
 
 export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
+  // Get the album ID from the URL parameters
+  const { id: albumId } = useParams();
+  
   const updateCards = useMutation({
     mutationFn: async (newCards: typeof cards) => {
+      console.log('Sending cards update:', JSON.stringify(newCards));
       const res = await apiRequest("PATCH", `/api/pages/${pageId}/cards`, {
         cards: newCards
       });
-      return res.json();
+      const data = await res.json();
+      console.log('Received response:', JSON.stringify(data));
+      return data;
     },
-    onSuccess: () => {
-      // Invalidate the specific page query
+    onSuccess: (data) => {
+      // Log the successful update
+      console.log('Cards updated successfully:', JSON.stringify(data));
+      // Invalidate the specific page query to refresh with new data using the correct albumId
       queryClient.invalidateQueries({ 
-        queryKey: [`/api/albums/${pageId}/pages`]
+        queryKey: [`/api/albums/${albumId}/pages`]
       });
     }
   });
