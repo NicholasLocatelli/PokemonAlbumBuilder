@@ -26,13 +26,15 @@ export default function AlbumPage() {
   });
 
   const pageQuery = useQuery({
-    queryKey: [`/api/albums/${albumId}/pages`, currentPage],
+    queryKey: [`/api/albums/${albumId}/pages`, albumId, currentPage],
     queryFn: async () => {
       const res = await fetch(`/api/albums/${albumId}/pages/${currentPage}`);
       if (res.status === 404) return null;
       if (!res.ok) throw new Error("Failed to load page");
       return res.json() as Promise<Page>;
-    }
+    },
+    staleTime: 0, // Don't use stale data
+    refetchOnWindowFocus: true // Re-fetch when window regains focus
   });
 
   const createPage = useMutation({
@@ -46,7 +48,7 @@ export default function AlbumPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
-        queryKey: [`/api/albums/${albumId}/pages`, currentPage]
+        queryKey: [`/api/albums/${albumId}/pages`, albumId, currentPage]
       });
       toast({
         title: "Page created",
