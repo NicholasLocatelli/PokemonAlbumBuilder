@@ -19,14 +19,9 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
       return res.json();
     },
     onSuccess: () => {
-      // Get the albumId from the current cards
-      const albumId = cards[0]?.albumId || pageId;
-      // Find the current page number from the first card's position
-      const pageNumber = Math.floor((cards[0]?.position || 0) / gridSize) + 1;
-
       // Invalidate the specific page query
       queryClient.invalidateQueries({ 
-        queryKey: [`/api/albums/${albumId}/pages/${pageNumber}`]
+        queryKey: [`/api/albums/${pageId}/pages`]
       });
     }
   });
@@ -42,12 +37,13 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
       const position = element?.closest('[data-position]')?.getAttribute('data-position');
       if (!position) return;
 
-      // Create a copy of the current cards array
-      const newCards = Array(gridSize).fill(null);
-
-      // Copy all existing cards to maintain their positions
+      // Create a deep copy of the current cards array to avoid mutation issues
+      // Make sure the array has the right size for the current grid
+      let newCards = Array(gridSize).fill(null);
+      
+      // Copy existing cards to their positions
       cards.forEach((card, index) => {
-        if (card) {
+        if (card && index < gridSize) {
           newCards[index] = { ...card };
         }
       });
@@ -56,10 +52,10 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
       const positionIndex = parseInt(position);
       newCards[positionIndex] = {
         position: positionIndex,
-        cardId: item.card.id,
-        albumId: cards[0]?.albumId // added albumId
+        cardId: item.card.id
       };
 
+      console.log('Updating cards:', JSON.stringify(newCards));
       updateCards.mutate(newCards);
     },
     collect: (monitor) => ({
@@ -82,7 +78,9 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
           position={i}
           card={cards[i]}
           onRemove={() => {
+            // Create a deep copy of the current cards array
             const newCards = [...cards];
+            // Set the removed position to null
             newCards[i] = null;
             updateCards.mutate(newCards);
           }}
