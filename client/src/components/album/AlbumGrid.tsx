@@ -1,71 +1,107 @@
 import { useDrop } from 'react-dnd';
+import { useState, useEffect } from 'react';
 import CardSlot from './CardSlot';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import type { PokemonCard } from '@shared/schema';
+import { useParams } from 'wouter';
 
 interface AlbumGridProps {
   gridSize: number;
-  cards: Array<{position: number; cardId: string; albumId?: string} | null>;
+  cards: Array<{position: number; cardId: string} | null>;
   pageId: number;
 }
 
 export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
+  const { id: albumId } = useParams();
+  
+  // Local state for tracking cards - we'll initialize it from props
+  const [localCards, setLocalCards] = useState<Array<{position: number; cardId: string} | null>>(
+    Array(gridSize).fill(null)
+  );
+  
+  // Initialize local cards from server data when props change
+  useEffect(() => {
+    // Create a blank array of the correct size
+    const newCards = Array(gridSize).fill(null);
+    
+    // Fill in known cards from the server data
+    if (cards && cards.length > 0) {
+      cards.forEach(card => {
+        if (card && typeof card.position === 'number' && card.position < gridSize) {
+          newCards[card.position] = card;
+        }
+      });
+    }
+    
+    setLocalCards(newCards);
+    console.log('Cards initialized:', JSON.stringify(newCards));
+  }, [cards, gridSize]);
+  
+  // Update cards on the server
   const updateCards = useMutation({
-    mutationFn: async (newCards: typeof cards) => {
-      const res = await apiRequest("PATCH", `/api/pages/${pageId}/cards`, {
-        cards: newCards
+    mutationFn: async (updatedCards: Array<{position: number; cardId: string} | null>) => {
+      // Filter out null values for the API request
+      const filteredCards = updatedCards
+        .map((card, index) => card ? { ...card, position: index } : null)
+        .filter(card => card !== null);
+      
+      console.log('Sending cards update:', JSON.stringify(filteredCards));
+      const res = await apiRequest("PATCH", `/api/pages/${pageId}/cards`, { 
+        cards: filteredCards 
       });
       return res.json();
     },
     onSuccess: () => {
-      // Get the albumId from the current cards
-      const albumId = cards[0]?.albumId || pageId;
-      // Find the current page number from the first card's position
-      const pageNumber = Math.floor((cards[0]?.position || 0) / gridSize) + 1;
-
-      // Invalidate the specific page query
-      queryClient.invalidateQueries({ 
-        queryKey: [`/api/albums/${albumId}/pages/${pageNumber}`]
-      });
+      if (albumId) {
+        // Invalidate both the album query and the page query
+        queryClient.invalidateQueries({
+          queryKey: [`/api/albums/${albumId}/pages`]
+        });
+      }
     }
   });
 
+  // Handle dropping a card into a slot
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'POKEMON_CARD',
     drop: (item: { card: PokemonCard }, monitor) => {
       const clientOffset = monitor.getClientOffset();
       if (!clientOffset) return;
-
-      // Find the slot element under the cursor
+      
+      // Find which slot the card was dropped on
       const element = document.elementFromPoint(clientOffset.x, clientOffset.y);
-      const position = element?.closest('[data-position]')?.getAttribute('data-position');
-      if (!position) return;
-
-      // Create a copy of the current cards array
-      const newCards = Array(gridSize).fill(null);
-
-      // Copy all existing cards to maintain their positions
-      cards.forEach((card, index) => {
-        if (card) {
-          newCards[index] = { ...card };
-        }
-      });
-
-      // Update the specific position with the new card
-      const positionIndex = parseInt(position);
-      newCards[positionIndex] = {
-        position: positionIndex,
-        cardId: item.card.id,
-        albumId: cards[0]?.albumId // added albumId
-      };
-
+      const positionAttr = element?.closest('[data-position]')?.getAttribute('data-position');
+      if (!positionAttr) return;
+      
+      const position = parseInt(positionAttr);
+      
+      // Create a new cards array with the dropped card in the correct position
+      const newCards = [...localCards];
+      newCards[position] = { position, cardId: item.card.id };
+      
+      // Update local state first for a responsive UI
+      setLocalCards(newCards);
+      
+      // Then update the server
       updateCards.mutate(newCards);
     },
     collect: (monitor) => ({
       isOver: monitor.isOver()
     })
-  }));
+  }), [localCards]);
+
+  // Handle removing a card from a slot
+  const handleCardRemove = (position: number) => {
+    const newCards = [...localCards];
+    newCards[position] = null;
+    
+    // Update local state first
+    setLocalCards(newCards);
+    
+    // Then update the server
+    updateCards.mutate(newCards);
+  };
 
   const gridCols = gridSize === 4 ? 'grid-cols-2' :
                   gridSize === 9 ? 'grid-cols-3' :
@@ -76,16 +112,12 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
       ref={drop}
       className={`grid ${gridCols} gap-6 bg-card p-8 rounded-lg shadow-lg min-h-[600px] border-2 ${isOver ? 'border-primary' : 'border-primary/20'} border-dashed transition-colors duration-200`}
     >
-      {Array.from({ length: gridSize }).map((_, i) => (
+      {localCards.map((card, i) => (
         <CardSlot
           key={i}
           position={i}
-          card={cards[i]}
-          onRemove={() => {
-            const newCards = [...cards];
-            newCards[i] = null;
-            updateCards.mutate(newCards);
-          }}
+          card={card}
+          onRemove={() => handleCardRemove(i)}
         />
       ))}
     </div>

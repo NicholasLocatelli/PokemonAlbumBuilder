@@ -11,6 +11,7 @@ interface CardSlotProps {
 }
 
 export default function CardSlot({ position, card, onRemove }: CardSlotProps) {
+  // Fetch card details when we have a cardId
   const cardQuery = useQuery({
     queryKey: ["/api/cards", card?.cardId],
     queryFn: async () => {
@@ -19,7 +20,8 @@ export default function CardSlot({ position, card, onRemove }: CardSlotProps) {
       if (!res.ok) throw new Error("Failed to load card");
       return res.json() as Promise<PokemonCard>;
     },
-    enabled: !!card?.cardId // Only run query if we have a cardId
+    enabled: !!card?.cardId, // Only run query if we have a cardId
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes since Pokemon cards don't change
   });
 
   return (
@@ -42,7 +44,10 @@ export default function CardSlot({ position, card, onRemove }: CardSlotProps) {
             variant="destructive"
             size="icon"
             className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={onRemove}
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent event bubbling
+              onRemove();
+            }}
           >
             <X className="h-4 w-4" />
           </Button>

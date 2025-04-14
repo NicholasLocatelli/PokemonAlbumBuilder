@@ -67,8 +67,29 @@ export class MemStorage implements IStorage {
   async updatePageCards(id: number, cards: Array<{position: number; cardId: string} | null>): Promise<Page> {
     const page = this.pages.get(id);
     if (!page) throw new Error("Page not found");
-
-    const updatedPage = { ...page, cards };
+    
+    // Debug to see what's being sent
+    console.log(`Updating page ${id} cards:`, JSON.stringify(cards));
+    
+    // Make sure to maintain all the cards
+    const existingCards = page.cards.filter(card => card !== null);
+    
+    // Determine which cards to keep from existing cards (ones not being modified)
+    const cardsToKeep = existingCards.filter(existingCard => {
+      if (!existingCard) return false;
+      
+      // Keep cards whose positions aren't being updated in the new array
+      return !cards.some(newCard => 
+        newCard && newCard.position === existingCard.position
+      );
+    });
+    
+    // Combine the kept cards with the new ones
+    const combinedCards = [...cardsToKeep, ...cards.filter(card => card !== null)];
+    
+    console.log(`Updated cards array:`, JSON.stringify(combinedCards));
+    
+    const updatedPage = { ...page, cards: combinedCards };
     this.pages.set(id, updatedPage);
     return updatedPage;
   }
