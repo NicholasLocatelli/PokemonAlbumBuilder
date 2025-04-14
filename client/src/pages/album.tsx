@@ -26,7 +26,7 @@ export default function AlbumPage() {
   });
 
   const pageQuery = useQuery({
-    queryKey: [`/api/albums/${albumId}/pages`, albumId, currentPage],
+    queryKey: [`/api/albums/${albumId}/pages`, albumId],
     queryFn: async () => {
       const res = await fetch(`/api/albums/${albumId}/pages/${currentPage}`);
       if (res.status === 404) return null;
@@ -34,7 +34,8 @@ export default function AlbumPage() {
       return res.json() as Promise<Page>;
     },
     staleTime: 0, // Don't use stale data
-    refetchOnWindowFocus: true // Re-fetch when window regains focus
+    refetchOnWindowFocus: true, // Re-fetch when window regains focus
+    refetchInterval: 1000 // Refresh every second to ensure we always have the latest data
   });
 
   const createPage = useMutation({
@@ -48,7 +49,7 @@ export default function AlbumPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
-        queryKey: [`/api/albums/${albumId}/pages`, albumId, currentPage]
+        queryKey: [`/api/albums/${albumId}/pages`]
       });
       toast({
         title: "Page created",
