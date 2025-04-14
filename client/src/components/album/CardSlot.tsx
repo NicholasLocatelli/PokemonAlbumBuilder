@@ -11,21 +11,17 @@ interface CardSlotProps {
 }
 
 export default function CardSlot({ position, card, onRemove }: CardSlotProps) {
-  // Debug the card prop to ensure we're getting proper data
-  console.log(`CardSlot ${position} rendering with card:`, card);
-  
+  // Fetch card details when we have a cardId
   const cardQuery = useQuery({
     queryKey: ["/api/cards", card?.cardId],
     queryFn: async () => {
       if (!card?.cardId) return null;
-      console.log(`Fetching card with ID: ${card.cardId}`);
       const res = await fetch(`/api/cards/${card.cardId}`);
       if (!res.ok) throw new Error("Failed to load card");
-      const data = await res.json() as PokemonCard;
-      console.log(`Loaded card data:`, data);
-      return data;
+      return res.json() as Promise<PokemonCard>;
     },
-    enabled: !!card?.cardId // Only run query if we have a cardId
+    enabled: !!card?.cardId, // Only run query if we have a cardId
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes since Pokemon cards don't change
   });
 
   return (
