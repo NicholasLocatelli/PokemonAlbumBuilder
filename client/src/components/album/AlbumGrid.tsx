@@ -70,8 +70,29 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
     setActivePosition(position);
     setSearchModalOpen(true);
   };
+  
+  // Handle card selection from search modal
+  const handleCardSelect = (card: PokemonCard) => {
+    if (activePosition === null) return;
+    
+    // Create a new cards array with the selected card in the correct position
+    const newCards = [...localCards];
+    newCards[activePosition] = { 
+      position: activePosition, 
+      cardId: card.id 
+    };
+    
+    // Update local state first for a responsive UI
+    setLocalCards(newCards);
+    
+    // Then update the server
+    updateCards.mutate(newCards);
+    
+    // Reset active position
+    setActivePosition(null);
+  };
 
-  // Handle dropping a card into a slot
+  // Still keep the drop functionality for backwards compatibility
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'POKEMON_CARD',
     drop: (item: { card: PokemonCard }, monitor) => {
@@ -136,7 +157,9 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
       {/* Card search modal */}
       <CardSearchModal 
         open={searchModalOpen} 
-        onOpenChange={setSearchModalOpen} 
+        onOpenChange={setSearchModalOpen}
+        onCardSelect={handleCardSelect}
+        activePosition={activePosition}
       />
     </>
   );
