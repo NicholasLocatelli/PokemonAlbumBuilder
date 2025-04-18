@@ -1,7 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import AlbumGrid from "@/components/album/AlbumGrid";
-import CardSelector from "@/components/album/CardSelector";
 import PageControls from "@/components/album/PageControls";
 import LayoutSelector from "@/components/album/LayoutSelector";
 import { Button } from "@/components/ui/button";
@@ -104,29 +103,25 @@ export default function AlbumPage() {
           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
-          <div className="space-y-4">
-            {needsPageCreation ? (
-              <div className="bg-card p-8 rounded-lg text-center">
-                <p className="text-lg mb-4">Page {currentPage} hasn't been created yet</p>
-                <Button onClick={() => createPage.mutate()}>
-                  Create Page {currentPage}
-                </Button>
-              </div>
-            ) : (
-              <AlbumGrid
-                gridSize={albumQuery.data.gridSize}
-                cards={page?.cards || []}
-                pageId={page?.id || 0}
-              />
-            )}
-            <PageControls
-              currentPage={currentPage}
-              onPageChange={setCurrentPage}
+        <div className="space-y-6">
+          {needsPageCreation ? (
+            <div className="bg-card p-8 rounded-lg text-center">
+              <p className="text-lg mb-4">Page {currentPage} hasn't been created yet</p>
+              <Button onClick={() => createPage.mutate()}>
+                Create Page {currentPage}
+              </Button>
+            </div>
+          ) : (
+            <AlbumGrid
+              gridSize={albumQuery.data.gridSize}
+              cards={page?.cards || []}
+              pageId={page?.id || 0}
             />
-          </div>
-
-          <CardSelector />
+          )}
+          <PageControls
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+          />
         </div>
       </div>
     </div>
