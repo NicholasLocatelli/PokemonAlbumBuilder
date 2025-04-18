@@ -1,6 +1,7 @@
 import { useDrop } from 'react-dnd';
 import { useState, useEffect } from 'react';
 import CardSlot from './CardSlot';
+import CardSearchModal from './CardSearchModal';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import type { PokemonCard } from '@shared/schema';
@@ -14,6 +15,8 @@ interface AlbumGridProps {
 
 export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
   const { id: albumId } = useParams();
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [activePosition, setActivePosition] = useState<number | null>(null);
   
   // Local state for tracking cards - we'll initialize it from props
   const [localCards, setLocalCards] = useState<Array<{position: number; cardId: string} | null>>(
@@ -62,7 +65,34 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
     }
   });
 
-  // Handle dropping a card into a slot
+  // Handle opening the search modal for a specific slot
+  const handleAddClick = (position: number) => {
+    setActivePosition(position);
+    setSearchModalOpen(true);
+  };
+  
+  // Handle card selection from search modal
+  const handleCardSelect = (card: PokemonCard) => {
+    if (activePosition === null) return;
+    
+    // Create a new cards array with the selected card in the correct position
+    const newCards = [...localCards];
+    newCards[activePosition] = { 
+      position: activePosition, 
+      cardId: card.id 
+    };
+    
+    // Update local state first for a responsive UI
+    setLocalCards(newCards);
+    
+    // Then update the server
+    updateCards.mutate(newCards);
+    
+    // Reset active position
+    setActivePosition(null);
+  };
+
+  // Still keep the drop functionality for backwards compatibility
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'POKEMON_CARD',
     drop: (item: { card: PokemonCard }, monitor) => {
@@ -108,18 +138,29 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
                   'grid-cols-4';
 
   return (
-    <div
-      ref={drop}
-      className={`grid ${gridCols} gap-6 bg-card p-8 rounded-lg shadow-lg min-h-[600px] border-2 ${isOver ? 'border-primary' : 'border-primary/20'} border-dashed transition-colors duration-200`}
-    >
-      {localCards.map((card, i) => (
-        <CardSlot
-          key={i}
-          position={i}
-          card={card}
-          onRemove={() => handleCardRemove(i)}
-        />
-      ))}
-    </div>
+    <>
+      <div
+        ref={drop}
+        className={`grid ${gridCols} gap-6 bg-card p-8 rounded-lg shadow-lg min-h-[600px] border-2 ${isOver ? 'border-primary' : 'border-primary/20'} border-dashed transition-colors duration-200`}
+      >
+        {localCards.map((card, i) => (
+          <CardSlot
+            key={i}
+            position={i}
+            card={card}
+            onRemove={() => handleCardRemove(i)}
+            onAddClick={() => handleAddClick(i)}
+          />
+        ))}
+      </div>
+      
+      {/* Card search modal */}
+      <CardSearchModal 
+        open={searchModalOpen} 
+        onOpenChange={setSearchModalOpen}
+        onCardSelect={handleCardSelect}
+        activePosition={activePosition}
+      />
+    </>
   );
 }
