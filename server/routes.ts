@@ -11,6 +11,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const album = await storage.createAlbum(albumData);
     res.json(album);
   });
+  
+  app.get("/api/albums/all", async (req, res) => {
+    const albums = await storage.getAllAlbums();
+    res.json(albums);
+  });
 
   app.get("/api/albums/:id", async (req, res) => {
     const id = parseInt(req.params.id);
