@@ -4,6 +4,7 @@ export interface IStorage {
   // Album operations
   createAlbum(album: InsertAlbum): Promise<Album>;
   getAlbum(id: number): Promise<Album | undefined>;
+  getAllAlbums(): Promise<Album[]>;
   updateAlbumGridSize(id: number, gridSize: number): Promise<Album>;
   
   // Page operations
@@ -40,6 +41,10 @@ export class MemStorage implements IStorage {
 
   async getAlbum(id: number): Promise<Album | undefined> {
     return this.albums.get(id);
+  }
+  
+  async getAllAlbums(): Promise<Album[]> {
+    return Array.from(this.albums.values());
   }
 
   async updateAlbumGridSize(id: number, gridSize: number): Promise<Album> {

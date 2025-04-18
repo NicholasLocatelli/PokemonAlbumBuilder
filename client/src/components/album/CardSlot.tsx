@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, Plus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { PokemonCard } from "@shared/schema";
 
@@ -8,9 +8,10 @@ interface CardSlotProps {
   position: number;
   card: { position: number; cardId: string; } | null;
   onRemove: () => void;
+  onAddClick: () => void;
 }
 
-export default function CardSlot({ position, card, onRemove }: CardSlotProps) {
+export default function CardSlot({ position, card, onRemove, onAddClick }: CardSlotProps) {
   // Fetch card details when we have a cardId
   const cardQuery = useQuery({
     queryKey: ["/api/cards", card?.cardId],
@@ -53,9 +54,13 @@ export default function CardSlot({ position, card, onRemove }: CardSlotProps) {
           </Button>
         </>
       ) : (
-        <div className="w-full h-full flex items-center justify-center border-2 border-dashed border-primary/20 rounded-lg text-muted-foreground hover:border-primary/40 transition-colors">
-          Drop card here
-        </div>
+        <button 
+          className="w-full h-full flex flex-col items-center justify-center border-2 border-dashed border-primary/20 rounded-lg text-muted-foreground hover:border-primary/40 hover:bg-primary/5 transition-all"
+          onClick={onAddClick}
+        >
+          <Plus className="h-10 w-10 mb-2 text-primary/40" />
+          <span className="text-sm">Add card</span>
+        </button>
       )}
     </Card>
   );
