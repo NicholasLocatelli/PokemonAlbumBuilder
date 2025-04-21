@@ -41,9 +41,9 @@ export default function Home() {
 
   // Fetch albums for the current user or all albums if not logged in
   const albumsQuery = useQuery({
-    queryKey: user ? ["/api/albums/user"] : ["/api/albums/all"],
+    queryKey: user ? ["/api/user/albums"] : ["/api/albums/all"],
     queryFn: async () => {
-      const endpoint = user ? "/api/albums/user" : "/api/albums/all";
+      const endpoint = user ? "/api/user/albums" : "/api/albums/all";
       const res = await fetch(endpoint);
       if (!res.ok) throw new Error("Failed to load albums");
       return res.json() as Promise<Album[]>;
@@ -65,7 +65,7 @@ export default function Home() {
       
       // Invalidate both album query endpoints
       queryClient.invalidateQueries({ queryKey: ["/api/albums/all"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/albums/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user/albums"] });
       
       toast({
         title: "Album created!",
