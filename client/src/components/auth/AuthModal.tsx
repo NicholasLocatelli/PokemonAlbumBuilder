@@ -164,7 +164,7 @@ export default function AuthModal({ children }: AuthModalProps) {
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isLoading}
                 >
                   {isSubmitting ? (
                     <>
@@ -255,7 +255,7 @@ export default function AuthModal({ children }: AuthModalProps) {
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isLoading}
                 >
                   {isSubmitting ? (
                     <>
