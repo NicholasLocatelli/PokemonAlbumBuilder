@@ -24,6 +24,9 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { Album } from "@shared/schema";
+import { useAuth } from "@/hooks/use-auth";
+import UserMenu from "@/components/auth/UserMenu";
+import AuthModal from "@/components/auth/AuthModal";
 
 export default function Home() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
