@@ -10,24 +10,24 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
-  
+
   // Album operations
   createAlbum(album: InsertAlbum): Promise<Album>;
   getAlbum(id: number): Promise<Album | undefined>;
   getAllAlbums(): Promise<Album[]>;
   getUserAlbums(userId: number): Promise<Album[]>;
   updateAlbumGridSize(id: number, gridSize: number): Promise<Album>;
-  
+
   // Page operations
   createPage(page: InsertPage): Promise<Page>;
   getPage(albumId: number, pageNumber: number): Promise<Page | undefined>;
   updatePageCards(id: number, cards: Array<{position: number; cardId: string} | null>): Promise<Page>;
-  
+
   // Pokemon TCG API operations
   searchCards(query: string, setId?: string): Promise<PokemonCard[]>;
   getCard(id: string): Promise<PokemonCard | undefined>;
   getSets(): Promise<Array<{id: string; name: string; series: string}>>;
-  
+
   // Session store for authentication
   sessionStore: session.Store;
 }
@@ -50,13 +50,13 @@ export class MemStorage implements IStorage {
     this.currentAlbumId = 1;
     this.currentPageId = 1;
     this.currentUserId = 1;
-    
+
     // Create a simple in-memory session store
     const MemoryStoreFactory = MemoryStore(session);
     this.sessionStore = new MemoryStoreFactory({
       checkPeriod: 86400000 // prune expired entries every 24h
     });
-    
+
     // Add a default test album
     const testAlbum: Album = {
       id: this.currentAlbumId++,
@@ -66,7 +66,7 @@ export class MemStorage implements IStorage {
       createdAt: new Date()
     };
     this.albums.set(testAlbum.id, testAlbum);
-    
+
     // Add a default test page
     const testPage: Page = {
       id: this.currentPageId++,
@@ -76,9 +76,15 @@ export class MemStorage implements IStorage {
     };
     this.pages.set(testPage.id, testPage);
   }
-  
+
   // User operations
   async createUser(user: InsertUser): Promise<User> {
+    // Check if username already exists
+    const existingUser = await this.getUserByUsername(user.username);
+    if (existingUser) {
+      throw new Error("Username already exists");
+    }
+    
     const newUser: User = {
       id: this.currentUserId++,
       username: user.username,
@@ -90,15 +96,15 @@ export class MemStorage implements IStorage {
     this.users.set(newUser.id, newUser);
     return newUser;
   }
-  
+
   async getUser(id: number): Promise<User | undefined> {
     return this.users.get(id);
   }
-  
+
   async getUserByUsername(username: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(user => user.username === username);
   }
-  
+
   async getUserAlbums(userId: number): Promise<Album[]> {
     return Array.from(this.albums.values()).filter(album => album.userId === userId);
   }
@@ -119,7 +125,7 @@ export class MemStorage implements IStorage {
   async getAlbum(id: number): Promise<Album | undefined> {
     return this.albums.get(id);
   }
-  
+
   async getAllAlbums(): Promise<Album[]> {
     return Array.from(this.albums.values());
   }
@@ -127,7 +133,7 @@ export class MemStorage implements IStorage {
   async updateAlbumGridSize(id: number, gridSize: number): Promise<Album> {
     const album = await this.getAlbum(id);
     if (!album) throw new Error("Album not found");
-    
+
     const updatedAlbum = { ...album, gridSize };
     this.albums.set(id, updatedAlbum);
     return updatedAlbum;
@@ -149,28 +155,28 @@ export class MemStorage implements IStorage {
   async updatePageCards(id: number, cards: Array<{position: number; cardId: string} | null>): Promise<Page> {
     const page = this.pages.get(id);
     if (!page) throw new Error("Page not found");
-    
+
     // Debug to see what's being sent
     console.log(`Updating page ${id} cards:`, JSON.stringify(cards));
-    
+
     // Make sure to maintain all the cards
     const existingCards = page.cards.filter(card => card !== null);
-    
+
     // Determine which cards to keep from existing cards (ones not being modified)
     const cardsToKeep = existingCards.filter(existingCard => {
       if (!existingCard) return false;
-      
+
       // Keep cards whose positions aren't being updated in the new array
       return !cards.some(newCard => 
         newCard && newCard.position === existingCard.position
       );
     });
-    
+
     // Combine the kept cards with the new ones
     const combinedCards = [...cardsToKeep, ...cards.filter(card => card !== null)];
-    
+
     console.log(`Updated cards array:`, JSON.stringify(combinedCards));
-    
+
     const updatedPage = { ...page, cards: combinedCards };
     this.pages.set(id, updatedPage);
     return updatedPage;
@@ -179,35 +185,35 @@ export class MemStorage implements IStorage {
   async searchCards(query: string, setId?: string): Promise<PokemonCard[]> {
     // Construct the API query parameters
     let apiQuery = '';
-    
+
     // Check if query is numeric to enable searching by card number when a set is specified
     const isNumeric = /^\d+$/.test(query);
-    
+
     if (setId && isNumeric) {
       // If we have a set ID and the query is a number, search by card number within that set
       apiQuery = `number:${query} set.id:${setId}`;
     } else {
       // Otherwise, use name search with wildcard
       apiQuery = `name:${query}*`;
-      
+
       // Add set filter if provided
       if (setId) {
         apiQuery += ` set.id:${setId}`;
       }
     }
-    
+
     console.log(`Searching cards with query: ${apiQuery}`);
-    
+
     // Set up the headers with the API key
     const headers = {
       'X-Api-Key': process.env.POKEMON_TCG_API_KEY || ''
     };
-    
+
     const response = await fetch(
       `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(apiQuery)}&orderBy=set.releaseDate,number&page=1&pageSize=20`,
       { headers }
     );
-    
+
     const data = await response.json();
 
     // Ensure 'data' exists and is an array
@@ -216,34 +222,34 @@ export class MemStorage implements IStorage {
       console.error("Unexpected API response format:", data);
       return []
     }
-        
+
     // Cache the cards
     cards.forEach(card => this.cardCache.set(card.id, card));
-    
+
     return cards;
   }
-  
+
   // Method to get all available sets
   async getSets(): Promise<Array<{id: string; name: string; series: string}>> {
     // Set up the headers with the API key
     const headers = {
       'X-Api-Key': process.env.POKEMON_TCG_API_KEY || ''
     };
-    
+
     const response = await fetch(
       'https://api.pokemontcg.io/v2/sets',
       { headers }
     );
-    
+
     const data = await response.json();
-    
+
     // Ensure 'data' exists and is an array
     const sets = data?.data || [];
     if (!Array.isArray(sets)) {
       console.error("Unexpected API response format for sets:", data);
       return [];
     }
-    
+
     // Sort sets by release date (newest first)
     return sets.sort((a: any, b: any) => {
       return new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime();
@@ -264,9 +270,9 @@ export class MemStorage implements IStorage {
       `https://api.pokemontcg.io/v2/cards/${id}`,
       { headers }
     );
-    
+
     if (!response.ok) return undefined;
-    
+
     const data = await response.json();
     const card = data.data as PokemonCard;
     this.cardCache.set(id, card);
@@ -280,9 +286,16 @@ export class DatabaseStorage implements IStorage {
 
   constructor() {
     this.cardCache = new Map();
+
+    // Always use memory store for local development to avoid database issues
+    // We'll initialize the memory store first to make sure we have something
+    const MemoryStoreFactory = MemoryStore(session);
+    this.sessionStore = new MemoryStoreFactory({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    });
     
-    // Initialize session store with PostgreSQL
-    if (isDatabaseAvailable && pool) {
+    // Only attempt to use PostgreSQL session store if not running locally and database is available
+    if (isDatabaseAvailable && pool && process.env.NODE_ENV === 'production') {
       try {
         const PgSessionStore = ConnectPgSimple(session);
         this.sessionStore = new PgSessionStore({
@@ -292,41 +305,43 @@ export class DatabaseStorage implements IStorage {
           schemaName: 'public',
           errorLog: console.error
         });
+        console.log("Using PostgreSQL session store");
       } catch (error) {
-        console.warn("Error initializing PostgreSQL session store, falling back to memory store:", error);
-        const MemoryStoreFactory = MemoryStore(session);
-        this.sessionStore = new MemoryStoreFactory({
-          checkPeriod: 86400000 // prune expired entries every 24h
-        });
+        console.warn("Error initializing PostgreSQL session store, using memory store:", error);
+        // Memory store is already initialized above, so we're good
       }
     } else {
-      // Fallback to memory store if database is not available
-      const MemoryStoreFactory = MemoryStore(session);
-      this.sessionStore = new MemoryStoreFactory({
-        checkPeriod: 86400000 // prune expired entries every 24h
-      });
+      console.log("Using in-memory session store");
     }
   }
-  
+
   // User operations
   async createUser(user: InsertUser): Promise<User> {
-    if (!db) throw new Error("Database not available");
-    const [createdUser] = await db.insert(users).values(user).returning();
-    return createdUser;
+    if (!db || !pool) {
+      throw new Error("Pool missing for some reason");
+    }
+    
+    try {
+      const [createdUser] = await db.insert(users).values(user).returning();
+      return createdUser;
+    } catch (error) {
+      console.error("Error creating user:", error);
+      throw new Error("Database error occurred while creating user");
+    }
   }
-  
+
   async getUser(id: number): Promise<User | undefined> {
     if (!db) return undefined;
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
-  
+
   async getUserByUsername(username: string): Promise<User | undefined> {
     if (!db) return undefined;
     const [user] = await db.select().from(users).where(eq(users.username, username));
     return user;
   }
-  
+
   async getUserAlbums(userId: number): Promise<Album[]> {
     if (!db) return [];
     return await db.select().from(albums).where(eq(albums.userId, userId));
@@ -343,7 +358,7 @@ export class DatabaseStorage implements IStorage {
     const [album] = await db.select().from(albums).where(eq(albums.id, id));
     return album;
   }
-  
+
   async getAllAlbums(): Promise<Album[]> {
     if (!db) return [];
     return await db.select().from(albums);
@@ -356,7 +371,7 @@ export class DatabaseStorage implements IStorage {
       .set({ gridSize })
       .where(eq(albums.id, id))
       .returning();
-    
+
     if (!updatedAlbum) throw new Error("Album not found");
     return updatedAlbum;
   }
@@ -385,56 +400,56 @@ export class DatabaseStorage implements IStorage {
     if (!db) throw new Error("Database not available");
     // Debug to see what's being sent
     console.log(`Updating page ${id} cards:`, JSON.stringify(cards));
-    
+
     // Get the existing page
     const [page] = await db.select().from(pages).where(eq(pages.id, id));
     if (!page) throw new Error("Page not found");
-    
+
     // Filter out null values from the cards array
     const nonNullCards = cards.filter(card => card !== null) as Array<{position: number; cardId: string}>;
-    
+
     // Update the page with the new cards
     const [updatedPage] = await db
       .update(pages)
       .set({ cards: nonNullCards })
       .where(eq(pages.id, id))
       .returning();
-    
+
     return updatedPage;
   }
 
   async searchCards(query: string, setId?: string): Promise<PokemonCard[]> {
     // Construct the API query parameters
     let apiQuery = '';
-    
+
     // Check if query is numeric to enable searching by card number when a set is specified
     const isNumeric = /^\d+$/.test(query);
-    
+
     if (setId && isNumeric) {
       // If we have a set ID and the query is a number, search by card number within that set
       apiQuery = `number:${query} set.id:${setId}`;
     } else {
       // Otherwise, use name search with wildcard
       apiQuery = `name:${query}*`;
-      
+
       // Add set filter if provided
       if (setId) {
         apiQuery += ` set.id:${setId}`;
       }
     }
-    
+
     console.log(`Searching cards with query: ${apiQuery}`);
-    
+
     // Set up the headers with the API key
     const headers = {
       'X-Api-Key': process.env.POKEMON_TCG_API_KEY || ''
     };
-    
+
     const response = await fetch(
       `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(apiQuery)}&orderBy=set.releaseDate,number&page=1&pageSize=20`,
       { headers }
     );
-    
+
     const data = await response.json();
 
     // Ensure 'data' exists and is an array
@@ -443,34 +458,34 @@ export class DatabaseStorage implements IStorage {
       console.error("Unexpected API response format:", data);
       return []
     }
-        
+
     // Cache the cards
     cards.forEach(card => this.cardCache.set(card.id, card));
-    
+
     return cards;
   }
-  
+
   // Method to get all available sets
   async getSets(): Promise<Array<{id: string; name: string; series: string}>> {
     // Set up the headers with the API key
     const headers = {
       'X-Api-Key': process.env.POKEMON_TCG_API_KEY || ''
     };
-    
+
     const response = await fetch(
       'https://api.pokemontcg.io/v2/sets',
       { headers }
     );
-    
+
     const data = await response.json();
-    
+
     // Ensure 'data' exists and is an array
     const sets = data?.data || [];
     if (!Array.isArray(sets)) {
       console.error("Unexpected API response format for sets:", data);
       return [];
     }
-    
+
     // Sort sets by release date (newest first)
     return sets.sort((a: any, b: any) => {
       return new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime();
@@ -491,9 +506,9 @@ export class DatabaseStorage implements IStorage {
       `https://api.pokemontcg.io/v2/cards/${id}`,
       { headers }
     );
-    
+
     if (!response.ok) return undefined;
-    
+
     const data = await response.json();
     const card = data.data as PokemonCard;
     this.cardCache.set(id, card);
