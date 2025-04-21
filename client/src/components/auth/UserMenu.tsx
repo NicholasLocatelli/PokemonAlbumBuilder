@@ -12,7 +12,7 @@ import { LogOut, User as UserIcon } from "lucide-react";
 import AuthModal from "./AuthModal";
 
 export default function UserMenu() {
-  const { user, logoutMutation } = useAuth();
+  const { user, logout } = useAuth();
 
   // If the user is not logged in, show the login button
   if (!user) {
@@ -29,6 +29,14 @@ export default function UserMenu() {
   const initials = user.displayName 
     ? user.displayName.slice(0, 2).toUpperCase() 
     : user.username.slice(0, 2).toUpperCase();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      // Error handling is done in the hook
+    }
+  };
 
   return (
     <DropdownMenu>
@@ -56,7 +64,7 @@ export default function UserMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="cursor-pointer text-destructive focus:text-destructive"
-          onClick={() => logoutMutation.mutate()}
+          onClick={handleLogout}
         >
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
