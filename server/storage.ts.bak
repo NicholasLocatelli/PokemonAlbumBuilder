@@ -2,8 +2,8 @@ import { albums, pages, users, type Album, type InsertAlbum, type Page, type Ins
 import { db, pool, isDatabaseAvailable } from "./db";
 import { eq, and } from "drizzle-orm";
 import session from "express-session";
-import ConnectPgSimple from "connect-pg-simple";
-import MemoryStore from "memorystore";
+import connectPgSimple from "connect-pg-simple";
+import createMemoryStore from "memorystore";
 
 export interface IStorage {
   // User operations
@@ -52,8 +52,8 @@ export class MemStorage implements IStorage {
     this.currentUserId = 1;
     
     // Create a simple in-memory session store
-    const MemoryStoreFactory = MemoryStore(session);
-    this.sessionStore = new MemoryStoreFactory({
+    const MemoryStore = createMemoryStore(session);
+    this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // prune expired entries every 24h
     });
     
@@ -282,16 +282,16 @@ export class DatabaseStorage implements IStorage {
     this.cardCache = new Map();
     
     // Initialize session store with PostgreSQL
-    if (isDatabaseAvailable && pool) {
-      const PgSessionStore = ConnectPgSimple(session);
-      this.sessionStore = new PgSessionStore({
+    if (isDatabaseAvailable) {
+      const ConnectPG = connectPgSimple(session);
+      this.sessionStore = new ConnectPG({
         pool: pool as any,
         createTableIfMissing: true
       });
     } else {
       // Fallback to memory store if database is not available
-      const MemoryStoreFactory = MemoryStore(session);
-      this.sessionStore = new MemoryStoreFactory({
+      const MemoryStore = createMemoryStore(session);
+      this.sessionStore = new MemoryStore({
         checkPeriod: 86400000 // prune expired entries every 24h
       });
     }
@@ -299,47 +299,39 @@ export class DatabaseStorage implements IStorage {
   
   // User operations
   async createUser(user: InsertUser): Promise<User> {
-    if (!db) throw new Error("Database not available");
     const [createdUser] = await db.insert(users).values(user).returning();
     return createdUser;
   }
   
   async getUser(id: number): Promise<User | undefined> {
-    if (!db) return undefined;
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
   
   async getUserByUsername(username: string): Promise<User | undefined> {
-    if (!db) return undefined;
     const [user] = await db.select().from(users).where(eq(users.username, username));
     return user;
   }
   
   async getUserAlbums(userId: number): Promise<Album[]> {
-    if (!db) return [];
     return await db.select().from(albums).where(eq(albums.userId, userId));
   }
 
   async createAlbum(album: InsertAlbum): Promise<Album> {
-    if (!db) throw new Error("Database not available");
     const [createdAlbum] = await db.insert(albums).values(album).returning();
     return createdAlbum;
   }
 
   async getAlbum(id: number): Promise<Album | undefined> {
-    if (!db) return undefined;
     const [album] = await db.select().from(albums).where(eq(albums.id, id));
     return album;
   }
   
   async getAllAlbums(): Promise<Album[]> {
-    if (!db) return [];
     return await db.select().from(albums);
   }
 
   async updateAlbumGridSize(id: number, gridSize: number): Promise<Album> {
-    if (!db) throw new Error("Database not available");
     const [updatedAlbum] = await db
       .update(albums)
       .set({ gridSize })
@@ -351,13 +343,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPage(page: InsertPage): Promise<Page> {
-    if (!db) throw new Error("Database not available");
     const [createdPage] = await db.insert(pages).values(page).returning();
     return createdPage;
   }
 
   async getPage(albumId: number, pageNumber: number): Promise<Page | undefined> {
-    if (!db) return undefined;
     const [page] = await db
       .select()
       .from(pages)
@@ -371,7 +361,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updatePageCards(id: number, cards: Array<{position: number; cardId: string} | null>): Promise<Page> {
-    if (!db) throw new Error("Database not available");
     // Debug to see what's being sent
     console.log(`Updating page ${id} cards:`, JSON.stringify(cards));
     
@@ -491,6 +480,7 @@ export class DatabaseStorage implements IStorage {
 }
 
 // Use DatabaseStorage if DATABASE_URL is available, otherwise use MemStorage
+// Create the appropriate storage implementation based on database availability
 export const storage = isDatabaseAvailable 
   ? new DatabaseStorage() 
   : new MemStorage();
