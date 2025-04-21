@@ -3,17 +3,40 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertAlbumSchema, insertPageSchema } from "@shared/schema";
 import { z } from "zod";
+import { setupAuth } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup authentication first
+  setupAuth(app);
   // Album routes
   app.post("/api/albums", async (req, res) => {
-    const albumData = insertAlbumSchema.parse(req.body);
-    const album = await storage.createAlbum(albumData);
-    res.json(album);
+    if (!req.isAuthenticated()) {
+      // Allow anonymous album creation for backward compatibility
+      const albumData = insertAlbumSchema.parse(req.body);
+      const album = await storage.createAlbum(albumData);
+      res.json(album);
+    } else {
+      // Authenticated album creation
+      const albumData = insertAlbumSchema.parse({
+        ...req.body,
+        userId: req.user.id
+      });
+      const album = await storage.createAlbum(albumData);
+      res.json(album);
+    }
   });
   
   app.get("/api/albums/all", async (req, res) => {
     const albums = await storage.getAllAlbums();
+    res.json(albums);
+  });
+  
+  // Get albums belonging to the logged-in user
+  app.get("/api/user/albums", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const albums = await storage.getUserAlbums(req.user.id);
     res.json(albums);
   });
 

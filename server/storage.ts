@@ -1,7 +1,7 @@
 import { albums, pages, users, type Album, type InsertAlbum, type Page, type InsertPage, type PokemonCard, type User, type InsertUser } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
-import type { SessionStore } from "express-session";
+import session from "express-session";
 
 export interface IStorage {
   // User operations
@@ -27,7 +27,7 @@ export interface IStorage {
   getSets(): Promise<Array<{id: string; name: string; series: string}>>;
   
   // Session store for authentication
-  sessionStore: SessionStore;
+  sessionStore: session.Store;
 }
 
 export class MemStorage implements IStorage {
@@ -212,9 +212,32 @@ export class MemStorage implements IStorage {
 
 export class DatabaseStorage implements IStorage {
   private cardCache: Map<string, PokemonCard>;
+  public sessionStore: session.Store;
 
   constructor() {
     this.cardCache = new Map();
+    // Session store will be initialized by auth.ts
+    this.sessionStore = {} as session.Store;
+  }
+  
+  // User operations
+  async createUser(user: InsertUser): Promise<User> {
+    const [createdUser] = await db.insert(users).values(user).returning();
+    return createdUser;
+  }
+  
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+  
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+  
+  async getUserAlbums(userId: number): Promise<Album[]> {
+    return await db.select().from(albums).where(eq(albums.userId, userId));
   }
 
   async createAlbum(album: InsertAlbum): Promise<Album> {
