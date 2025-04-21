@@ -54,9 +54,10 @@ type AuthModalProps = {
 };
 
 export default function AuthModal({ children }: AuthModalProps) {
-  const { loginMutation, registerMutation } = useAuth();
+  const { login, register, isLoading } = useAuth();
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -77,17 +78,26 @@ export default function AuthModal({ children }: AuthModalProps) {
   });
 
   const onLoginSubmit = async (data: LoginFormData) => {
-    await loginMutation.mutateAsync(data);
-    if (!loginMutation.isError) {
+    setIsSubmitting(true);
+    try {
+      await login(data.username, data.password);
       setOpen(false);
+    } catch (error) {
+      // Error is handled in useAuth
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const onRegisterSubmit = async (data: RegisterFormData) => {
-    const { confirmPassword, ...registerData } = data;
-    await registerMutation.mutateAsync(registerData);
-    if (!registerMutation.isError) {
+    setIsSubmitting(true);
+    try {
+      await register(data.username, data.password, data.displayName || undefined);
       setOpen(false);
+    } catch (error) {
+      // Error is handled in useAuth
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -154,9 +164,9 @@ export default function AuthModal({ children }: AuthModalProps) {
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={loginMutation.isPending}
+                  disabled={isSubmitting}
                 >
-                  {loginMutation.isPending ? (
+                  {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Logging in...
@@ -245,9 +255,9 @@ export default function AuthModal({ children }: AuthModalProps) {
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={registerMutation.isPending}
+                  disabled={isSubmitting}
                 >
-                  {registerMutation.isPending ? (
+                  {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Creating account...
