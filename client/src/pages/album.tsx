@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import AlbumGrid from "@/components/album/AlbumGrid";
 import PageControls from "@/components/album/PageControls";
 import LayoutSelector from "@/components/album/LayoutSelector";
@@ -8,12 +8,14 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState } from "react";
 import type { Album, Page } from "@shared/schema";
+import { ArrowLeft } from "lucide-react";
 
 export default function AlbumPage() {
   const { id } = useParams();
   const albumId = parseInt(id || "0");
   const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const albumQuery = useQuery({
     queryKey: [`/api/albums/${albumId}`],
@@ -95,6 +97,15 @@ export default function AlbumPage() {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
+        <Button 
+          variant="ghost" 
+          className="mb-4 flex items-center gap-2" 
+          onClick={() => setLocation("/")}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Home
+        </Button>
+        
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">{albumQuery.data.name}</h1>
           <LayoutSelector
