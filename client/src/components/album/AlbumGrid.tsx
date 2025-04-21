@@ -133,6 +133,59 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
     updateCards.mutate(newCards);
   };
 
+  // Handle card repositioning through drag and drop
+  const handleCardMove = (fromPosition: number, toPosition: number) => {
+    // Only proceed if positions are different and valid
+    if (fromPosition === toPosition || 
+        fromPosition < 0 || fromPosition >= localCards.length || 
+        toPosition < 0 || toPosition >= localCards.length) {
+      return;
+    }
+    
+    // Get the card being moved
+    const cardToMove = localCards[fromPosition];
+    if (!cardToMove) return; // Can't move empty slot
+    
+    // Create a new array to avoid mutating state directly
+    const newCards = [...localCards];
+    
+    // Move the card - swap positions
+    newCards[fromPosition] = newCards[toPosition];
+    newCards[toPosition] = cardToMove;
+    
+    // If we're moving to an empty slot, just place the card there
+    // and set the original position to null
+    if (newCards[fromPosition] === null) {
+      newCards[toPosition] = { 
+        ...cardToMove, 
+        position: toPosition 
+      };
+      newCards[fromPosition] = null;
+    } else {
+      // We're swapping with another card, update both positions
+      newCards[toPosition] = { 
+        ...cardToMove, 
+        position: toPosition 
+      };
+      
+      // Update the position of the other card too
+      if (newCards[fromPosition] !== null) {
+        newCards[fromPosition] = {
+          ...newCards[fromPosition]!,
+          position: fromPosition
+        };
+      }
+    }
+    
+    console.log(`Moving card from position ${fromPosition} to ${toPosition}`);
+    
+    // Update local state first for a responsive UI
+    setLocalCards(newCards);
+    
+    // Then update the server
+    updateCards.mutate(newCards);
+  };
+
   const gridCols = gridSize === 4 ? 'grid-cols-2' :
                   gridSize === 9 ? 'grid-cols-3' :
                   'grid-cols-4';
@@ -150,6 +203,7 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
             card={card}
             onRemove={() => handleCardRemove(i)}
             onAddClick={() => handleAddClick(i)}
+            onDrop={handleCardMove}
           />
         ))}
       </div>

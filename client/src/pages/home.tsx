@@ -84,7 +84,12 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6"
+    style={{
+      backgroundImage: "url('/background-pokeball.png')",
+      backgroundSize: "cover",
+      backgroundRepeat: "repeat",
+    }} >
       <div className="text-center mb-10">
         <h1 className="text-5xl font-bold bg-gradient-to-r from-red-500 to-yellow-400 bg-clip-text text-transparent mb-3">
           PokeBinder
