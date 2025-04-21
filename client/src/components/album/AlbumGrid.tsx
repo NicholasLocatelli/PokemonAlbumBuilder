@@ -135,6 +135,8 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
 
   // Handle card repositioning through drag and drop
   const handleCardMove = (fromPosition: number, toPosition: number) => {
+    console.log(`Moving card from position ${fromPosition} to ${toPosition}`);
+    
     // Only proceed if positions are different and valid
     if (fromPosition === toPosition || 
         fromPosition < 0 || fromPosition >= localCards.length || 
@@ -149,35 +151,28 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
     // Create a new array to avoid mutating state directly
     const newCards = [...localCards];
     
-    // Move the card - swap positions
-    newCards[fromPosition] = newCards[toPosition];
-    newCards[toPosition] = cardToMove;
+    const targetCard = newCards[toPosition];
     
-    // If we're moving to an empty slot, just place the card there
-    // and set the original position to null
-    if (newCards[fromPosition] === null) {
+    // Simple swap logic
+    if (targetCard === null) {
+      // Moving to an empty slot - just move the card and clear original position
       newCards[toPosition] = { 
         ...cardToMove, 
         position: toPosition 
       };
       newCards[fromPosition] = null;
     } else {
-      // We're swapping with another card, update both positions
+      // Swapping with another card - update both positions
       newCards[toPosition] = { 
         ...cardToMove, 
         position: toPosition 
       };
       
-      // Update the position of the other card too
-      if (newCards[fromPosition] !== null) {
-        newCards[fromPosition] = {
-          ...newCards[fromPosition]!,
-          position: fromPosition
-        };
-      }
+      newCards[fromPosition] = {
+        ...targetCard,
+        position: fromPosition
+      };
     }
-    
-    console.log(`Moving card from position ${fromPosition} to ${toPosition}`);
     
     // Update local state first for a responsive UI
     setLocalCards(newCards);
