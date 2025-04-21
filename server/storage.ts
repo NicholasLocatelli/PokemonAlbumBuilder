@@ -104,15 +104,34 @@ export class MemStorage implements IStorage {
 
   async searchCards(query: string, setId?: string): Promise<PokemonCard[]> {
     // Construct the API query parameters
-    let apiQuery = `name:${query}*`;
+    let apiQuery = '';
     
-    // Add set filter if provided
-    if (setId) {
-      apiQuery += ` set.id:${setId}`;
+    // Check if query is numeric to enable searching by card number when a set is specified
+    const isNumeric = /^\d+$/.test(query);
+    
+    if (setId && isNumeric) {
+      // If we have a set ID and the query is a number, search by card number within that set
+      apiQuery = `number:${query} set.id:${setId}`;
+    } else {
+      // Otherwise, use name search with wildcard
+      apiQuery = `name:${query}*`;
+      
+      // Add set filter if provided
+      if (setId) {
+        apiQuery += ` set.id:${setId}`;
+      }
     }
     
+    console.log(`Searching cards with query: ${apiQuery}`);
+    
+    // Set up the headers with the API key
+    const headers = {
+      'X-Api-Key': process.env.POKEMON_TCG_API_KEY || ''
+    };
+    
     const response = await fetch(
-      `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(apiQuery)}&orderBy=set.releaseDate,number&page=1&pageSize=20`
+      `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(apiQuery)}&orderBy=set.releaseDate,number&page=1&pageSize=20`,
+      { headers }
     );
     
     const data = await response.json();
@@ -132,7 +151,16 @@ export class MemStorage implements IStorage {
   
   // Method to get all available sets
   async getSets(): Promise<Array<{id: string; name: string; series: string}>> {
-    const response = await fetch('https://api.pokemontcg.io/v2/sets');
+    // Set up the headers with the API key
+    const headers = {
+      'X-Api-Key': process.env.POKEMON_TCG_API_KEY || ''
+    };
+    
+    const response = await fetch(
+      'https://api.pokemontcg.io/v2/sets',
+      { headers }
+    );
+    
     const data = await response.json();
     
     // Ensure 'data' exists and is an array
@@ -153,7 +181,16 @@ export class MemStorage implements IStorage {
       return this.cardCache.get(id);
     }
 
-    const response = await fetch(`https://api.pokemontcg.io/v2/cards/${id}`);
+    // Set up the headers with the API key
+    const headers = {
+      'X-Api-Key': process.env.POKEMON_TCG_API_KEY || ''
+    };
+
+    const response = await fetch(
+      `https://api.pokemontcg.io/v2/cards/${id}`,
+      { headers }
+    );
+    
     if (!response.ok) return undefined;
     
     const data = await response.json();
@@ -236,15 +273,34 @@ export class DatabaseStorage implements IStorage {
 
   async searchCards(query: string, setId?: string): Promise<PokemonCard[]> {
     // Construct the API query parameters
-    let apiQuery = `name:${query}*`;
+    let apiQuery = '';
     
-    // Add set filter if provided
-    if (setId) {
-      apiQuery += ` set.id:${setId}`;
+    // Check if query is numeric to enable searching by card number when a set is specified
+    const isNumeric = /^\d+$/.test(query);
+    
+    if (setId && isNumeric) {
+      // If we have a set ID and the query is a number, search by card number within that set
+      apiQuery = `number:${query} set.id:${setId}`;
+    } else {
+      // Otherwise, use name search with wildcard
+      apiQuery = `name:${query}*`;
+      
+      // Add set filter if provided
+      if (setId) {
+        apiQuery += ` set.id:${setId}`;
+      }
     }
     
+    console.log(`Searching cards with query: ${apiQuery}`);
+    
+    // Set up the headers with the API key
+    const headers = {
+      'X-Api-Key': process.env.POKEMON_TCG_API_KEY || ''
+    };
+    
     const response = await fetch(
-      `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(apiQuery)}&orderBy=set.releaseDate,number&page=1&pageSize=20`
+      `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(apiQuery)}&orderBy=set.releaseDate,number&page=1&pageSize=20`,
+      { headers }
     );
     
     const data = await response.json();
@@ -264,7 +320,16 @@ export class DatabaseStorage implements IStorage {
   
   // Method to get all available sets
   async getSets(): Promise<Array<{id: string; name: string; series: string}>> {
-    const response = await fetch('https://api.pokemontcg.io/v2/sets');
+    // Set up the headers with the API key
+    const headers = {
+      'X-Api-Key': process.env.POKEMON_TCG_API_KEY || ''
+    };
+    
+    const response = await fetch(
+      'https://api.pokemontcg.io/v2/sets',
+      { headers }
+    );
+    
     const data = await response.json();
     
     // Ensure 'data' exists and is an array
@@ -285,7 +350,16 @@ export class DatabaseStorage implements IStorage {
       return this.cardCache.get(id);
     }
 
-    const response = await fetch(`https://api.pokemontcg.io/v2/cards/${id}`);
+    // Set up the headers with the API key
+    const headers = {
+      'X-Api-Key': process.env.POKEMON_TCG_API_KEY || ''
+    };
+
+    const response = await fetch(
+      `https://api.pokemontcg.io/v2/cards/${id}`,
+      { headers }
+    );
+    
     if (!response.ok) return undefined;
     
     const data = await response.json();
