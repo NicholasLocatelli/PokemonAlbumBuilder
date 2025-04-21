@@ -4,8 +4,6 @@ import { Express } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
-import ConnectPgSimple from "connect-pg-simple";
-import { pool } from "./db";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 
@@ -41,9 +39,7 @@ async function comparePasswords(supplied: string, stored: string) {
  * Set up authentication for the Express app
  */
 export function setupAuth(app: Express) {
-  // Create a PostgreSQL-backed session store
-  const PgSessionStore = ConnectPgSimple(session);
-  
+  // Session settings using the storage implementation's sessionStore
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "pokemon-card-album-secret",
     resave: false,
@@ -52,11 +48,7 @@ export function setupAuth(app: Express) {
       secure: process.env.NODE_ENV === "production",
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     },
-    store: new PgSessionStore({
-      pool,
-      tableName: 'user_sessions',
-      createTableIfMissing: true
-    }),
+    store: storage.sessionStore,
   };
 
   app.set("trust proxy", 1);
