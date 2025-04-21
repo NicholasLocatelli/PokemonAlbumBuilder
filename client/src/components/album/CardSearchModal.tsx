@@ -85,13 +85,20 @@ export default function CardSearchModal({
         </VisuallyHidden>
         
         <div className="sticky top-0 z-10 p-4 bg-background/90 backdrop-blur-sm border-b space-y-3">
-          <Input
-            ref={inputRef}
-            placeholder="Search Pokémon cards..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full"
-          />
+          <div className="relative">
+            <Input
+              ref={inputRef}
+              placeholder={selectedSet ? "Search by name or card number..." : "Search Pokémon cards by name..."}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full"
+            />
+            {selectedSet && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
+                {/^\d+$/.test(search) ? "Searching by number" : "Searching by name"}
+              </div>
+            )}
+          </div>
           
           <div className="grid grid-cols-[auto_1fr] gap-2 items-center">
             <Label htmlFor="set-select" className="whitespace-nowrap">Filter by Set:</Label>
@@ -112,6 +119,12 @@ export default function CardSearchModal({
               </SelectContent>
             </Select>
           </div>
+          
+          {selectedSet && (
+            <div className="text-xs text-muted-foreground bg-muted/30 p-2 rounded-md">
+              <strong>Tip:</strong> With a set selected, you can search by card number (e.g., type "1" to find card #1 in this set)
+            </div>
+          )}
         </div>
 
         <ScrollArea className="h-[70vh] px-4 pb-4">
