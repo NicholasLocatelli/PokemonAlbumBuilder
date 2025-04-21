@@ -1,12 +1,19 @@
-import { albums, pages, type Album, type InsertAlbum, type Page, type InsertPage, type PokemonCard } from "@shared/schema";
+import { albums, pages, users, type Album, type InsertAlbum, type Page, type InsertPage, type PokemonCard, type User, type InsertUser } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
+import type { SessionStore } from "express-session";
 
 export interface IStorage {
+  // User operations
+  createUser(user: InsertUser): Promise<User>;
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  
   // Album operations
   createAlbum(album: InsertAlbum): Promise<Album>;
   getAlbum(id: number): Promise<Album | undefined>;
   getAllAlbums(): Promise<Album[]>;
+  getUserAlbums(userId: number): Promise<Album[]>;
   updateAlbumGridSize(id: number, gridSize: number): Promise<Album>;
   
   // Page operations
@@ -18,6 +25,9 @@ export interface IStorage {
   searchCards(query: string, setId?: string): Promise<PokemonCard[]>;
   getCard(id: string): Promise<PokemonCard | undefined>;
   getSets(): Promise<Array<{id: string; name: string; series: string}>>;
+  
+  // Session store for authentication
+  sessionStore: SessionStore;
 }
 
 export class MemStorage implements IStorage {
