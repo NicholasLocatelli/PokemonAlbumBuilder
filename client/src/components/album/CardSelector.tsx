@@ -31,15 +31,34 @@ function DraggableCard({ card }: { card: PokemonCard }) {
 
 export default function CardSelector() {
   const [search, setSearch] = useState("");
+  const [error, setError] = useState<string | null>(null); // State to manage error messages
+
+  const validateInput = (input: string) => {  
+    const isValid = /^[a-zA-Z0-9\s-]*$/.test(input); // Allow only alphanumeric characters and spaces
+    if (!isValid) {
+      setError("Invalid input. Only alphanumeric characters, spaces and '-' are allowed.");
+    } else {
+      setError(null); // Clear error if input is valid
+    }
+    return isValid;
+  };
 
   const searchQuery = useQuery({
     queryKey: ["/api/cards/search", search],
     queryFn: async () => {
-      if (!search) return [];
-      const res = await fetch(`/api/cards/search?query=${encodeURIComponent(search)}`);
-      if (!res.ok) throw new Error("Failed to search cards");
-      return res.json() as Promise<PokemonCard[]>;
-    }
+      try {
+        if (!search) return [];
+        const sanitizedQuery = encodeURIComponent(search);
+        const res = await fetch(`/api/cards/search?query=${sanitizedQuery}`);
+        if (!res.ok) throw new Error("Failed to search cards");
+        return res.json() as Promise<PokemonCard[]>;
+      } catch (error) {
+        console.error("Error fetching cards:", error);
+        setError("An error occurred while searching for cards.");
+        return [];
+      }
+    },
+    enabled: !error
   });
 
   return (
@@ -47,8 +66,14 @@ export default function CardSelector() {
       <Input
         placeholder="Search Pokémon cards..."
         value={search}
-        onChange={(e) => setSearch(e.target.value)}
+        onChange={(e) => {
+          const value = e.target.value;
+          if (validateInput(value)) {
+            setSearch(value); // Update state only if input is valid
+          }
+        }}
       />
+      {error && <p className="text-red-500 text-sm">{error}</p>} {/* Show error message */}
 
       <ScrollArea className="h-[600px]">
         <div className="space-y-2">
