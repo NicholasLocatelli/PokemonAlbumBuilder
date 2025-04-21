@@ -37,15 +37,18 @@ export default function Home() {
   
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { user, isLoading: isAuthLoading } = useAuth();
 
-  // Fetch all albums
+  // Fetch albums for the current user or all albums if not logged in
   const albumsQuery = useQuery({
-    queryKey: ["/api/albums/all"],
+    queryKey: user ? ["/api/albums/user"] : ["/api/albums/all"],
     queryFn: async () => {
-      const res = await fetch("/api/albums/all");
+      const endpoint = user ? "/api/albums/user" : "/api/albums/all";
+      const res = await fetch(endpoint);
       if (!res.ok) throw new Error("Failed to load albums");
       return res.json() as Promise<Album[]>;
-    }
+    },
+    enabled: !isAuthLoading // Only run query after auth state is determined
   });
 
   const createAlbum = useMutation({
@@ -59,7 +62,11 @@ export default function Home() {
     onSuccess: (data) => {
       setCreateDialogOpen(false);
       setLocation(`/album/${data.id}`);
+      
+      // Invalidate both album query endpoints
       queryClient.invalidateQueries({ queryKey: ["/api/albums/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/albums/user"] });
+      
       toast({
         title: "Album created!",
         description: `Created album "${data.name}"`
@@ -76,6 +83,17 @@ export default function Home() {
       });
       return;
     }
+    
+    // Check if user is logged in before creating an album
+    if (!user) {
+      toast({
+        title: "Login required",
+        description: "Please log in to create an album",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     createAlbum.mutate();
   };
 
@@ -87,36 +105,65 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6"
+    <div className="min-h-screen bg-background flex flex-col p-6"
     style={{
       backgroundImage: "url('/background-pokeball.png')",
       backgroundSize: "cover",
       backgroundRepeat: "repeat",
     }} >
-      <div className="text-center mb-10">
-        <h1 className="text-5xl font-bold bg-gradient-to-r from-red-500 to-yellow-400 bg-clip-text text-transparent mb-3">
-          PokeBinder
-        </h1>
-        <p className="text-muted-foreground text-lg">
-          Organize and display your Pokémon card collection
-        </p>
+      {/* Header with user menu */}
+      <div className="w-full flex justify-end mb-8">
+        <UserMenu />
       </div>
       
-      <div className="w-full max-w-md space-y-4">
-        <Button 
-          className="w-full py-8 text-xl"
-          onClick={() => setCreateDialogOpen(true)}
-        >
-          Create a new Album
-        </Button>
+      <div className="flex flex-col items-center justify-center flex-1">
+        <div className="text-center mb-10">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-red-500 to-yellow-400 bg-clip-text text-transparent mb-3">
+            PokeBinder
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            Organize and display your Pokémon card collection
+          </p>
+        </div>
         
-        <Button 
-          className="w-full py-8 text-xl"
-          variant="outline"
-          onClick={() => setSelectDialogOpen(true)}
-        >
-          Open Album...
-        </Button>
+        <div className="w-full max-w-md space-y-4">
+          {user ? (
+            <>
+              <Button 
+                className="w-full py-8 text-xl"
+                onClick={() => setCreateDialogOpen(true)}
+              >
+                Create a new Album
+              </Button>
+              
+              <Button 
+                className="w-full py-8 text-xl"
+                variant="outline"
+                onClick={() => setSelectDialogOpen(true)}
+              >
+                Open Album...
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button 
+                className="w-full py-8 text-xl"
+                onClick={() => setCreateDialogOpen(true)}
+              >
+                Create a new Album
+              </Button>
+              
+              <AuthModal>
+                <Button 
+                  className="w-full py-8 text-xl"
+                  variant="outline"
+                >
+                  Login to Access Albums
+                </Button>
+              </AuthModal>
+            </>
+          )}
+        </div>
       </div>
       
       {/* Create Album Dialog */}
