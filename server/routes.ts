@@ -83,13 +83,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Pokemon card routes
   app.get("/api/cards/search", async (req, res) => {
-    const { query, setId } = z.object({ 
+    const { query, setId, page, pageSize } = z.object({ 
       query: z.string(), 
-      setId: z.string().optional() 
+      setId: z.string().optional(),
+      page: z.string().optional().transform(val => val ? parseInt(val) : 1),
+      pageSize: z.string().optional().transform(val => val ? parseInt(val) : 20)
     }).parse(req.query);
     
-    const cards = await storage.searchCards(query, setId);
-    res.json(cards);
+    // Call searchCards with pagination parameters
+    const result = await storage.searchCards(query, setId, page, pageSize);
+    res.json(result);
   });
 
   app.get("/api/cards/:id", async (req, res) => {

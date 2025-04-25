@@ -8,6 +8,8 @@ import type { PokemonCard } from "@shared/schema";
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 interface CardSearchModalProps {
   open: boolean;
@@ -24,12 +26,17 @@ export default function CardSearchModal({
 }: CardSearchModalProps) {
   const [search, setSearch] = useState("");
   const [selectedSet, setSelectedSet] = useState<string | undefined>(undefined);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [cards, setCards] = useState<PokemonCard[]>([]);
+  const [totalCards, setTotalCards] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   
   // Focus the input when the modal opens and reset search
   useEffect(() => {
     if (open) {
       setSearch("");
+      setCurrentPage(1);
+      setCards([]);
       // Don't reset the set filter when reopening, so users can 
       // continue searching in the same set
       setTimeout(() => {
@@ -48,22 +55,49 @@ export default function CardSearchModal({
     }
   });
 
+  // Update search state when search or set changes
+  useEffect(() => {
+    setCurrentPage(1);
+    setCards([]);
+  }, [search, selectedSet]);
+
   const searchQuery = useQuery({
-    queryKey: ["/api/cards/search", search, selectedSet],
+    queryKey: ["/api/cards/search", search, selectedSet, currentPage],
     queryFn: async () => {
-      if (!search) return [];
+      if (!search) return { cards: [] as PokemonCard[], totalCount: 0 };
       
-      // Construct the query URL with optional setId
-      let url = `/api/cards/search?query=${encodeURIComponent(search)}`;
+      // Construct the query URL with pagination
+      let url = `/api/cards/search?query=${encodeURIComponent(search)}&page=${currentPage}&pageSize=20`;
       if (selectedSet) {
         url += `&setId=${encodeURIComponent(selectedSet)}`;
       }
       
       const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to search cards");
-      return res.json() as Promise<PokemonCard[]>;
-    }
+      return res.json() as Promise<{ cards: PokemonCard[], totalCount: number }>;
+    },
+    enabled: search.length > 0
   });
+
+  // Update cards state when search results change
+  useEffect(() => {
+    if (searchQuery.data) {
+      if (currentPage === 1) {
+        // Replace cards if it's the first page
+        setCards(searchQuery.data.cards);
+      } else {
+        // Append cards for subsequent pages
+        setCards(prevCards => [...prevCards, ...searchQuery.data.cards]);
+      }
+      setTotalCards(searchQuery.data.totalCount);
+    }
+  }, [searchQuery.data, currentPage]);
+
+  const handleLoadMore = () => {
+    setCurrentPage(prev => prev + 1);
+  };
+
+  const hasMoreCards = cards.length < totalCards;
 
   const handleCardClick = (card: PokemonCard) => {
     if (onCardSelect) {
@@ -128,46 +162,73 @@ export default function CardSearchModal({
         </div>
 
         <ScrollArea className="h-[70vh] px-4 pb-4">
-          {searchQuery.isLoading ? (
+          {searchQuery.isLoading && currentPage === 1 ? (
             <div className="flex items-center justify-center h-32">
-              Searching...
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Searching...
             </div>
-          ) : searchQuery.data?.length === 0 ? (
+          ) : cards.length === 0 ? (
             <div className="flex items-center justify-center h-32 text-muted-foreground">
               {search ? "No cards found" : "Type to search for cards"}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-2">
-              {searchQuery.data?.map((card) => (
-                <Card
-                  key={card.id}
-                  className="cursor-pointer transition-all hover:shadow-lg hover:scale-105 active:scale-95 overflow-hidden"
-                  onClick={() => handleCardClick(card)}
-                >
-                  <div className="relative">
-                    <img
-                      src={card.images.small}
-                      alt={card.name}
-                      className="w-full h-auto rounded-sm"
-                    />
-                    {card.set?.images?.symbol && (
-                      <div className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 backdrop-blur-sm p-1">
-                        <img
-                          src={card.set.images.symbol}
-                          alt={card.set.name}
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-2">
+                {cards.map((card) => (
+                  <Card
+                    key={card.id}
+                    className="cursor-pointer transition-all hover:shadow-lg hover:scale-105 active:scale-95 overflow-hidden"
+                    onClick={() => handleCardClick(card)}
+                  >
+                    <div className="relative">
+                      <img
+                        src={card.images.small}
+                        alt={card.name}
+                        className="w-full h-auto rounded-sm"
+                      />
+                      {card.set?.images?.symbol && (
+                        <div className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 backdrop-blur-sm p-1">
+                          <img
+                            src={card.set.images.symbol}
+                            alt={card.set.name}
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                      )}
+                      {card.rarity && (
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-1 text-center backdrop-blur-sm truncate">
+                          {card.number && <span className="mr-1">#{card.number}</span>}
+                          {card.rarity}
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+              
+              {/* Load More Button */}
+              {hasMoreCards && (
+                <div className="flex justify-center py-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleLoadMore}
+                    disabled={searchQuery.isLoading}
+                  >
+                    {searchQuery.isLoading && currentPage > 1 ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      <>Load More ({cards.length} of {totalCards})</>
                     )}
-                    {card.rarity && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-1 text-center backdrop-blur-sm truncate">
-                        {card.number && <span className="mr-1">#{card.number}</span>}
-                        {card.rarity}
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              ))}
+                  </Button>
+                </div>
+              )}
+              
+              {/* Display total results info */}
+              <div className="text-center text-sm text-muted-foreground pb-2">
+                Showing {cards.length} of {totalCards} cards
+              </div>
             </div>
           )}
         </ScrollArea>
