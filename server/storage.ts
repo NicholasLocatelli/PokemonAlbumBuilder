@@ -24,7 +24,7 @@ export interface IStorage {
   updatePageCards(id: number, cards: Array<{position: number; cardId: string} | null>): Promise<Page>;
 
   // Pokemon TCG API operations
-  searchCards(query: string, setId?: string): Promise<PokemonCard[]>;
+  searchCards(query: string, setId?: string, page?: number, pageSize?: number): Promise<{cards: PokemonCard[], totalCount: number}>;
   getCard(id: string): Promise<PokemonCard | undefined>;
   getSets(): Promise<Array<{id: string; name: string; series: string}>>;
 
@@ -182,7 +182,7 @@ export class MemStorage implements IStorage {
     return updatedPage;
   }
 
-  async searchCards(query: string, setId?: string): Promise<PokemonCard[]> {
+  async searchCards(query: string, setId?: string, page: number = 1, pageSize: number = 20): Promise<{cards: PokemonCard[], totalCount: number}> {
     // Construct the API query parameters
     let apiQuery = '';
 
@@ -202,7 +202,7 @@ export class MemStorage implements IStorage {
       }
     }
 
-    console.log(`Searching cards with query: ${apiQuery}`);
+    console.log(`Searching cards with query: ${apiQuery}, page: ${page}, pageSize: ${pageSize}`);
 
     // Set up the headers with the API key
     const headers = {
@@ -210,7 +210,7 @@ export class MemStorage implements IStorage {
     };
 
     const response = await fetch(
-      `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(apiQuery)}&orderBy=set.releaseDate,number&page=1&pageSize=20`,
+      `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(apiQuery)}&orderBy=set.releaseDate,number&page=${page}&pageSize=${pageSize}`,
       { headers }
     );
 
@@ -220,13 +220,16 @@ export class MemStorage implements IStorage {
     const cards = data?.data || [];
     if (!Array.isArray(cards)) {
       console.error("Unexpected API response format:", data);
-      return []
+      return { cards: [], totalCount: 0 };
     }
 
     // Cache the cards
     cards.forEach(card => this.cardCache.set(card.id, card));
 
-    return cards;
+    return {
+      cards,
+      totalCount: data.totalCount || cards.length
+    };
   }
 
   // Method to get all available sets
@@ -418,7 +421,7 @@ export class DatabaseStorage implements IStorage {
     return updatedPage;
   }
 
-  async searchCards(query: string, setId?: string): Promise<PokemonCard[]> {
+  async searchCards(query: string, setId?: string, page: number = 1, pageSize: number = 20): Promise<{cards: PokemonCard[], totalCount: number}> {
     // Construct the API query parameters
     let apiQuery = '';
 
@@ -438,7 +441,7 @@ export class DatabaseStorage implements IStorage {
       }
     }
 
-    console.log(`Searching cards with query: ${apiQuery}`);
+    console.log(`Searching cards with query: ${apiQuery}, page: ${page}, pageSize: ${pageSize}`);
 
     // Set up the headers with the API key
     const headers = {
@@ -446,7 +449,7 @@ export class DatabaseStorage implements IStorage {
     };
 
     const response = await fetch(
-      `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(apiQuery)}&orderBy=set.releaseDate,number&page=1&pageSize=20`,
+      `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(apiQuery)}&orderBy=set.releaseDate,number&page=${page}&pageSize=${pageSize}`,
       { headers }
     );
 
@@ -456,13 +459,16 @@ export class DatabaseStorage implements IStorage {
     const cards = data?.data || [];
     if (!Array.isArray(cards)) {
       console.error("Unexpected API response format:", data);
-      return []
+      return { cards: [], totalCount: 0 };
     }
 
     // Cache the cards
     cards.forEach(card => this.cardCache.set(card.id, card));
 
-    return cards;
+    return {
+      cards,
+      totalCount: data.totalCount || cards.length
+    };
   }
 
   // Method to get all available sets
