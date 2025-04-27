@@ -2,14 +2,9 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
-// Check for Windows environment and load .env file if needed
-if (process.platform === 'win32') {
-  try {
-    require('../load-env.js');
-  } catch (error) {
-    console.warn('Failed to load environment variables from .env file:', error);
-  }
-}
+// Check for Windows environment and load .env file
+// ES Module import is handled during startup in the batch file
+// The environment variables should be loaded before this file runs
 
 const app = express();
 app.use(express.json());
