@@ -9,12 +9,17 @@ This guide provides instructions for running the Pokémon Album Builder applicat
    - Recommended: Use the EnterpriseDB installer
    - During installation, set your password (default script uses 'admin')
    - Keep the default port (5432)
-   - Make sure to add PostgreSQL bin directory to your PATH
+   - Make sure to add PostgreSQL bin directory to your PATH during installation
 
-2. **Create Database & Tables**: You must set up the database before running the app
+2. **Create Database & Tables**: Choose one of these methods:
+
+   **Method A**: Using setup-db.bat (if psql is in your PATH)
    - Run `setup-db.bat` to create the database and all necessary tables
    - Enter your PostgreSQL username and password when prompted
-   - This only needs to be done once
+
+   **Method B**: Using pgAdmin (if psql is not in your PATH)
+   - Follow the instructions in `setup-pgadmin.md` to create the database and tables
+   - This uses the graphical pgAdmin tool instead of command-line tools
 
 ## Running the Application
 
@@ -41,8 +46,13 @@ That's it! The application will start and connect to your local PostgreSQL datab
 
 ### "relation does not exist" error
 - This means the database tables haven't been created yet
-- Run `setup-db.bat` to create the database and all necessary tables
+- Use either Method A (setup-db.bat) or Method B (pgAdmin) to create the tables
 - This is a required step when using PostgreSQL locally
+
+### "psql is not recognized as a command" error
+- This means PostgreSQL's psql command is not in your PATH
+- Use Method B (pgAdmin) described in setup-pgadmin.md instead
+- Or add PostgreSQL's bin directory to your PATH (typically C:\Program Files\PostgreSQL\XX\bin)
 
 ## Passwords and Security
 
