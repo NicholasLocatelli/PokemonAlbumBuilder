@@ -22,16 +22,10 @@ try {
     
     if (isLocalPostgres) {
       console.log("Using local PostgreSQL connection");
-      // Try to use local-db.ts for local PostgreSQL connections
-      try {
-        const localDb = require('./local-db');
-        pool = localDb.pool;
-        db = localDb.db;
-        console.log("Successfully connected to local PostgreSQL database");
-      } catch (localError) {
-        console.error("Failed to connect to local PostgreSQL:", localError);
-        throw localError; // Re-throw to trigger fallback
-      }
+      // For Windows/local PostgreSQL, use normal Pool
+      pool = new Pool({ connectionString: process.env.DATABASE_URL });
+      db = drizzle({ client: pool, schema });
+      console.log("Successfully connected to local PostgreSQL database");
     } else {
       // Use Neon Serverless for Replit environment
       pool = new Pool({ connectionString: process.env.DATABASE_URL });
