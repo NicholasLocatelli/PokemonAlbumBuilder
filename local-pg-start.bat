@@ -20,16 +20,9 @@ if not exist node_modules (
     call npm install
 )
 
-REM Make sure tsx and pg are installed locally
-echo Checking for required packages...
-if not exist node_modules\.bin\tsx.cmd (
-    echo Installing tsx...
-    call npm install tsx --save-dev
-)
-if not exist node_modules\pg (
-    echo Installing pg package for PostgreSQL...
-    call npm install pg --save
-)
+REM Make sure all required packages are installed locally
+echo Installing required packages for local development...
+call npm install tsx pg drizzle-orm@latest --save-dev
 
 REM Start the server using the local tsx
 echo Starting server...
