@@ -1,0 +1,31 @@
+.\local-pg-start.bat
+Starting Pokemon Album Builder with Local PostgreSQL...
+Set DATABASE_URL to postgresql://postgres:admin@localhost:5432/binderapp
+Creating temporary db.ts file for local development...
+        1 file copiati.
+        1 file copiati.
+        1 file copiati.
+Checking for required packages...
+Starting server...
+
+node:internal/process/esm_loader:34
+      internalBinding('errors').triggerUncaughtException(
+                                ^
+Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './pg-pool' is not defined by "exports" in C:\Users\progr\OneDrive\Desktop\BinderApp\P
+okemonAlbumBuilder\node_modules\drizzle-orm\package.json imported from C:\Users\progr\OneDrive\Desktop\BinderApp\PokemonAlbumBuilder\server\db.ts                                                                                                                                             at exportsNotFound (node:internal/modules/esm/resolve:304:10)
+    at packageExportsResolve (node:internal/modules/esm/resolve:651:9)
+    at packageResolve (node:internal/modules/esm/resolve:837:14)
+    at moduleResolve (node:internal/modules/esm/resolve:927:18)
+    at defaultResolve (node:internal/modules/esm/resolve:1157:11)
+    at nextResolve (node:internal/modules/esm/hooks:866:28)
+    at resolveBase (file:///C:/Users/progr/OneDrive/Desktop/BinderApp/PokemonAlbumBuilder/node_modules/tsx/dist/esm/index.mjs?1745772421134:2
+:3212)                                                                                                                                           at resolveDirectory (file:///C:/Users/progr/OneDrive/Desktop/BinderApp/PokemonAlbumBuilder/node_modules/tsx/dist/esm/index.mjs?1745772421
+134:2:3584)                                                                                                                                      at resolveTsPaths (file:///C:/Users/progr/OneDrive/Desktop/BinderApp/PokemonAlbumBuilder/node_modules/tsx/dist/esm/index.mjs?174577242113
+4:2:4073)                                                                                                                                        at async resolve (file:///C:/Users/progr/OneDrive/Desktop/BinderApp/PokemonAlbumBuilder/node_modules/tsx/dist/esm/index.mjs?1745772421134
+:2:4441) {                                                                                                                                     code: 'ERR_PACKAGE_PATH_NOT_EXPORTED'
+}
+
+Node.js v20.12.2
+Restoring original db.ts file...
+        1 file copiati.
+Local development session complete.
