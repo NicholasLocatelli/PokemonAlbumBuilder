@@ -321,33 +321,15 @@ export class DatabaseStorage implements IStorage {
   // User operations
   async createUser(user: InsertUser): Promise<User> {
     if (!db || !pool) {
-      console.error("Database connection unavailable for createUser - falling back to in-memory");
-      // Fallback to in-memory if database is not available
-      const memStorage = new MemStorage();
-      return await memStorage.createUser(user);
+      throw new Error("Pool missing for some reason");
     }
     
     try {
-      // Validate database connection with a quick query first
-      try {
-        const testQuery = await pool.query('SELECT 1');
-        console.log("Database connection verified for createUser");
-      } catch (testError) {
-        console.error("Database connection failed:", testError);
-        // Fallback to in-memory if database is not responding
-        const memStorage = new MemStorage();
-        return await memStorage.createUser(user);
-      }
-      
-      // Now try the actual insert
       const [createdUser] = await db.insert(users).values(user).returning();
       return createdUser;
     } catch (error) {
       console.error("Error creating user:", error);
-      // Fallback to in-memory as last resort
-      console.log("Falling back to in-memory storage for createUser");
-      const memStorage = new MemStorage();
-      return await memStorage.createUser(user);
+      throw new Error("Database error occurred while creating user");
     }
   }
 
@@ -540,21 +522,7 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Attempt to use DatabaseStorage if DATABASE_URL is available, otherwise use MemStorage
-let storage: IStorage;
-
-try {
-  if (isDatabaseAvailable && db && pool) {
-    console.log("Using DatabaseStorage for data persistence");
-    storage = new DatabaseStorage();
-  } else {
-    console.log("Using MemStorage for in-memory data storage");
-    storage = new MemStorage();
-  }
-} catch (error) {
-  console.error("Error creating storage:", error);
-  console.log("Falling back to MemStorage due to error");
-  storage = new MemStorage();
-}
-
-export { storage };
+// Use DatabaseStorage if DATABASE_URL is available, otherwise use MemStorage
+export const storage = isDatabaseAvailable 
+  ? new DatabaseStorage() 
+  : new MemStorage();
