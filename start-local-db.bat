@@ -9,12 +9,8 @@ echo DATABASE_URL set to: %DATABASE_URL%
 echo Make sure your local PostgreSQL server is running!
 echo Make sure you've created a database named "binderapp"!
 
-REM Install required packages if not already installed
-echo Checking for required packages...
-call npm install pg drizzle-orm --no-save
-
-REM Start the server
-echo Starting application...
+REM Start the server without trying to install packages
+echo Starting application with local PostgreSQL...
 call npm run dev
 
 echo Application stopped.
