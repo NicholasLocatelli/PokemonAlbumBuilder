@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/neon-serverless';
 import ws from "ws";
 import * as schema from "@shared/schema";
 
+// Configure Neon database with WebSocket support
 neonConfig.webSocketConstructor = ws;
 
 // Check if DATABASE_URL is available and log it for debugging
@@ -15,9 +16,28 @@ export let db: any = null;
 
 try {
   if (isDatabaseAvailable) {
-    pool = new Pool({ connectionString: process.env.DATABASE_URL });
-    db = drizzle({ client: pool, schema });
-    console.log("Successfully connected to PostgreSQL database");
+    // Check if we're using a local PostgreSQL connection
+    const isLocalPostgres = process.env.DATABASE_URL?.includes('localhost') || 
+                           process.env.DATABASE_URL?.includes('127.0.0.1');
+    
+    if (isLocalPostgres) {
+      console.log("Using local PostgreSQL connection");
+      // Try to use local-db.ts for local PostgreSQL connections
+      try {
+        const localDb = require('./local-db');
+        pool = localDb.pool;
+        db = localDb.db;
+        console.log("Successfully connected to local PostgreSQL database");
+      } catch (localError) {
+        console.error("Failed to connect to local PostgreSQL:", localError);
+        throw localError; // Re-throw to trigger fallback
+      }
+    } else {
+      // Use Neon Serverless for Replit environment
+      pool = new Pool({ connectionString: process.env.DATABASE_URL });
+      db = drizzle({ client: pool, schema });
+      console.log("Successfully connected to Neon PostgreSQL database");
+    }
   } else {
     console.warn("DATABASE_URL not set. Using in-memory storage instead.");
   }
