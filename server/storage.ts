@@ -540,7 +540,21 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Use DatabaseStorage if DATABASE_URL is available, otherwise use MemStorage
-export const storage = isDatabaseAvailable 
-  ? new DatabaseStorage() 
-  : new MemStorage();
+// Attempt to use DatabaseStorage if DATABASE_URL is available, otherwise use MemStorage
+let storage: IStorage;
+
+try {
+  if (isDatabaseAvailable && db && pool) {
+    console.log("Using DatabaseStorage for data persistence");
+    storage = new DatabaseStorage();
+  } else {
+    console.log("Using MemStorage for in-memory data storage");
+    storage = new MemStorage();
+  }
+} catch (error) {
+  console.error("Error creating storage:", error);
+  console.log("Falling back to MemStorage due to error");
+  storage = new MemStorage();
+}
+
+export { storage };
