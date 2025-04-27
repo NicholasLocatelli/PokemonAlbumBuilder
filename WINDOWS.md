@@ -14,6 +14,10 @@ This guide provides instructions for running the Pokémon Album Builder applicat
    - Using pgAdmin: Right-click on Databases → Create → Database → Name: binderapp
    - Using psql: `CREATE DATABASE binderapp;`
 
+3. **Create Tables**: You must create the database tables before running the app
+   - Run `windows-setup-db.bat` to create all necessary tables
+   - This only needs to be done once after database creation
+
 ## Running the Application
 
 ### Method 1: Simple Windows Start
@@ -47,9 +51,9 @@ If you prefer not to modify files:
 - Try connecting with pgAdmin or psql to confirm your credentials work
 
 ### "relation does not exist" error
-- This means the database tables haven't been created
-- The application should create these automatically on first run
-- If it doesn't, you may need to manually run migrations
+- This means the database tables haven't been created yet
+- Run `windows-setup-db.bat` to create all necessary tables
+- This is a required step when using PostgreSQL locally
 
 ## Passwords and Security
 
