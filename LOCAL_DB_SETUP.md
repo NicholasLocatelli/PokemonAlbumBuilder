@@ -9,6 +9,12 @@ This guide will help you set up and run the Pokemon Album Builder with a local P
    - Default password: (set during installation)
    - Default port: 5432
 
+2. **Install Required NPM Package**
+   - Run this command in your project directory:
+   ```
+   npm install pg
+   ```
+
 ## Option 1: Using pgAdmin (Recommended)
 
 pgAdmin is a graphical tool that comes with PostgreSQL:
@@ -31,28 +37,41 @@ pgAdmin is a graphical tool that comes with PostgreSQL:
 
 ## Option 2: Using Command Line (If psql is in PATH)
 
+If you prefer command line and have psql in your PATH:
+
 1. **Open Command Prompt**
 2. **Run setup-db.bat**
    - This will prompt for username (default: postgres) and password
    - It will create the database and tables automatically
 
-## Running with Local Database
+## Simple Method for Running with Local Database
 
 After setting up the database:
 
-1. **Edit start-local-db.bat**
-   - Update the connection string if necessary:
-   ```bat
-   SET DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/binderapp
-   ```
-   - Replace YOUR_PASSWORD with your actual PostgreSQL password
+1. **Run simple-local-pg.bat**
+   - Enter your PostgreSQL password when prompted
+   - This just sets the necessary environment variables and runs npm run dev
+   - No file modifications needed
 
-2. **Run start-local-db.bat**
-   - This script will:
-     - Set the necessary environment variables
-     - Temporarily use local PostgreSQL-compatible code
-     - Start the application
-     - Restore original files when done
+## Manual Method (One-Time File Edit)
+
+If the simple method doesn't work:
+
+1. **Modify server/db.ts** - Add ONE LINE after line 6:
+   ```typescript
+   import { Pool, neonConfig } from '@neondatabase/serverless';
+   import { drizzle } from 'drizzle-orm/neon-serverless';
+   import ws from "ws";
+   import * as schema from "@shared/schema";
+   
+   // ADD THIS LINE:
+   const isLocalPostgres = process.env.DATABASE_URL?.includes('localhost');
+   
+   // Configure Neon database with WebSocket support
+   neonConfig.webSocketConstructor = ws;
+   ```
+
+2. **Use simple-local-pg.bat** to run the application
 
 ## Troubleshooting
 

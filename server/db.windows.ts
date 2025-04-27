@@ -1,11 +1,11 @@
 // Windows-compatible PostgreSQL connection
 import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import * as schema from "@shared/schema";
+import * as schema from "../shared/schema";
 
 // Check if DATABASE_URL is available
-export const isDatabaseAvailable = !!process.env.DATABASE_URL;
 console.log("DATABASE_URL:", process.env.DATABASE_URL || "not set");
+export const isDatabaseAvailable = !!process.env.DATABASE_URL;
 
 // Initialize pool and db
 export let pool: pg.Pool | null = null;
@@ -16,11 +16,13 @@ if (isDatabaseAvailable) {
     console.log("Using Windows-compatible PostgreSQL connection");
     pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
     
-    // Test connection synchronously in the initialization
+    // Test connection
     pool.query('SELECT 1')
       .then(() => {
         console.log("Successfully connected to PostgreSQL database");
-        db = drizzle(pool, { schema });
+        if (pool) {
+          db = drizzle(pool, { schema });
+        }
       })
       .catch(err => {
         console.error("Failed to connect to PostgreSQL database:", err.message);
