@@ -1,6 +1,11 @@
-// Simple script to load .env file
-const fs = require('fs');
-const path = require('path');
+// ES module compatible environment loader
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get the directory name of the current module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 try {
   const envPath = path.resolve('.env');
@@ -26,3 +31,11 @@ try {
 } catch (error) {
   console.error('Error loading .env file:', error);
 }
+
+// Export for use in other modules
+export const loadEnv = () => {
+  console.log('Environment variables loaded');
+};
+
+// Default export
+export default {};
