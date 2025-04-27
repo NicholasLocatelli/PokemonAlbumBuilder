@@ -2,40 +2,29 @@
 
 This guide provides instructions for running the Pokémon Album Builder application on Windows with a local PostgreSQL database.
 
-## Prerequisites
+## Setup Steps
 
-1. **PostgreSQL**: Install PostgreSQL on your Windows machine.
+1. **Install PostgreSQL**: Install PostgreSQL on your Windows machine.
    - Download from: [PostgreSQL Downloads](https://www.postgresql.org/download/windows/)
    - Recommended: Use the EnterpriseDB installer
    - During installation, set your password (default script uses 'admin')
    - Keep the default port (5432)
+   - Make sure to add PostgreSQL bin directory to your PATH
 
-2. **Create Database**: Create a database named 'binderapp'
-   - Using pgAdmin: Right-click on Databases → Create → Database → Name: binderapp
-   - Using psql: `CREATE DATABASE binderapp;`
-
-3. **Create Tables**: You must create the database tables before running the app
-   - Run `windows-setup-db.bat` to create all necessary tables
-   - This only needs to be done once after database creation
+2. **Create Database & Tables**: You must set up the database before running the app
+   - Run `setup-db.bat` to create the database and all necessary tables
+   - Enter your PostgreSQL username and password when prompted
+   - This only needs to be done once
 
 ## Running the Application
 
-### Method 1: Simple Windows Start
-
-The easiest way to run the application on Windows:
+After completing the setup steps:
 
 1. Run `windows-start.bat`
-   - This script temporarily modifies database configuration files
-   - Uses the Windows-compatible PostgreSQL driver
-   - Restores original files when done
+   - This sets the DATABASE_URL to your local PostgreSQL
+   - Starts the application with npm run dev
 
-### Method 2: Direct PostgreSQL Connection 
-
-If you prefer not to modify files:
-
-1. Run `start-local-db.bat`
-   - This sets the DATABASE_URL environment variable to your local PostgreSQL
-   - Attempts to use the current database configuration
+That's it! The application will start and connect to your local PostgreSQL database.
 
 ## Troubleshooting
 
@@ -52,7 +41,7 @@ If you prefer not to modify files:
 
 ### "relation does not exist" error
 - This means the database tables haven't been created yet
-- Run `windows-setup-db.bat` to create all necessary tables
+- Run `setup-db.bat` to create the database and all necessary tables
 - This is a required step when using PostgreSQL locally
 
 ## Passwords and Security
