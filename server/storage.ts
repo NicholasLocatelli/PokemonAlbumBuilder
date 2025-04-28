@@ -290,15 +290,14 @@ export class DatabaseStorage implements IStorage {
   constructor() {
     this.cardCache = new Map();
 
-    // Always use memory store for local development to avoid database issues
-    // We'll initialize the memory store first to make sure we have something
+    // Initialize memory store as fallback
     const MemoryStoreFactory = MemoryStore(session);
     this.sessionStore = new MemoryStoreFactory({
       checkPeriod: 86400000 // prune expired entries every 24h
     });
     
-    // Only attempt to use PostgreSQL session store if not running locally and database is available
-    if (isDatabaseAvailable && pool && process.env.NODE_ENV === 'production') {
+    // Try to use PostgreSQL session store if database is available (for both local and production)
+    if (isDatabaseAvailable && pool) {
       try {
         const PgSessionStore = ConnectPgSimple(session);
         this.sessionStore = new PgSessionStore({
@@ -308,13 +307,14 @@ export class DatabaseStorage implements IStorage {
           schemaName: 'public',
           errorLog: console.error
         });
-        console.log("Using PostgreSQL session store");
+        console.log("Using PostgreSQL session store for persistent sessions");
       } catch (error) {
         console.warn("Error initializing PostgreSQL session store, using memory store:", error);
+        console.warn("Sessions won't persist between app restarts!");
         // Memory store is already initialized above, so we're good
       }
     } else {
-      console.log("Using in-memory session store");
+      console.log("Using in-memory session store (sessions won't persist between app restarts)");
     }
   }
 

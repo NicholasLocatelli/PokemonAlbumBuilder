@@ -21,8 +21,9 @@ neonConfig.webSocketConstructor = ws;
 export const isDatabaseAvailable = !!process.env.DATABASE_URL;
 
 // Log connection status
-if (isDatabaseAvailable) {
-  console.log("DATABASE_URL is set:", process.env.DATABASE_URL.substring(0, process.env.DATABASE_URL.indexOf(':') + 3) + '***');
+if (isDatabaseAvailable && process.env.DATABASE_URL) {
+  // Safely log just that we have a connection string without exposing credentials
+  console.log("DATABASE_URL is set and will be used for PostgreSQL connection");
 } else {
   console.warn("DATABASE_URL not set. Using in-memory storage instead.");
 }
