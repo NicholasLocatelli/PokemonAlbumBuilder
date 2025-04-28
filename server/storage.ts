@@ -330,7 +330,7 @@ export class DatabaseStorage implements IStorage {
               CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "user_sessions" ("expire");
             `).then(() => {
               console.log("Session table created or verified successfully");
-            }).catch(tableError => {
+            }).catch((tableError: Error) => {
               console.warn("Failed to create session table:", tableError);
               // Continue anyway, the table might already exist
             });
@@ -343,7 +343,7 @@ export class DatabaseStorage implements IStorage {
               errorLog: console.error
             });
             console.log("Using PostgreSQL session store (local environment)");
-          } catch (pgStoreError) {
+          } catch (pgStoreError: any) {
             // If any error happens with the PostgreSQL store, use memory store
             console.warn("Error with PostgreSQL session store in local environment:", pgStoreError);
             console.log("Using in-memory session store for local development");
