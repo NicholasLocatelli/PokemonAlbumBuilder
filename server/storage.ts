@@ -296,20 +296,62 @@ export class DatabaseStorage implements IStorage {
       checkPeriod: 86400000 // prune expired entries every 24h
     });
     
-    // Try to use PostgreSQL session store if database is available (for both local and production)
+    // Detect environment - we need a different approach for local vs. Replit environment
+    const isReplitEnvironment = process.env.REPL_ID || process.env.REPL_OWNER;
+    
+    // Try to use PostgreSQL session store if database is available and in the right environment
     if (isDatabaseAvailable && pool) {
       try {
-        const PgSessionStore = ConnectPgSimple(session);
-        this.sessionStore = new PgSessionStore({
-          pool: pool as any,
-          tableName: 'user_sessions', // Use a different table name
-          createTableIfMissing: true,
-          schemaName: 'public',
-          errorLog: console.error
-        });
-        console.log("Using PostgreSQL session store for persistent sessions");
+        // Use different configuration based on environment
+        if (isReplitEnvironment) {
+          // In Replit - use Neon PostgreSQL with connect-pg-simple
+          const PgSessionStore = ConnectPgSimple(session);
+          this.sessionStore = new PgSessionStore({
+            pool: pool as any,
+            tableName: 'user_sessions', // Use a different table name
+            createTableIfMissing: true,
+            schemaName: 'public',
+            errorLog: console.error
+          });
+          console.log("Using PostgreSQL session store (Replit environment)");
+        } else {
+          try {
+            // Local environment - try direct approach first
+            const PgSessionStore = ConnectPgSimple(session);
+            
+            // Attempt to manually create the session table to avoid issues in a separate promise
+            pool.query(`
+              CREATE TABLE IF NOT EXISTS "user_sessions" (
+                "sid" varchar NOT NULL COLLATE "default",
+                "sess" json NOT NULL,
+                "expire" timestamp(6) NOT NULL,
+                CONSTRAINT "user_sessions_pkey" PRIMARY KEY ("sid")
+              );
+              CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "user_sessions" ("expire");
+            `).then(() => {
+              console.log("Session table created or verified successfully");
+            }).catch(tableError => {
+              console.warn("Failed to create session table:", tableError);
+              // Continue anyway, the table might already exist
+            });
+            
+            // Create store with table create disabled (we'll create it separately)
+            this.sessionStore = new PgSessionStore({
+              pool: pool as any,
+              tableName: 'user_sessions',
+              createTableIfMissing: false, // We're trying to create it separately
+              errorLog: console.error
+            });
+            console.log("Using PostgreSQL session store (local environment)");
+          } catch (pgStoreError) {
+            // If any error happens with the PostgreSQL store, use memory store
+            console.warn("Error with PostgreSQL session store in local environment:", pgStoreError);
+            console.log("Using in-memory session store for local development");
+            // Keep using the memory store we already initialized
+          }
+        }
       } catch (error) {
-        console.warn("Error initializing PostgreSQL session store, using memory store:", error);
+        console.warn("Error initializing PostgreSQL session store, using memory store instead");
         console.warn("Sessions won't persist between app restarts!");
         // Memory store is already initialized above, so we're good
       }
