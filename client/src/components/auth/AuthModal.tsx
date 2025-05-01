@@ -140,10 +140,23 @@ export default function AuthModal({ children }: AuthModalProps) {
     }
   };
 
+  // Reset form fields when the dialog is closed
+  useEffect(() => {
+    if (!open) {
+      // Wait for the dialog transition to finish before resetting
+      const timeout = setTimeout(() => {
+        loginForm.reset();
+        registerForm.reset();
+        setFormError(null);
+      }, 300);
+      return () => clearTimeout(timeout);
+    }
+  }, [open, loginForm, registerForm]);
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] w-[95vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl md:text-2xl flex items-center gap-2">
             <KeyIcon className="h-6 w-6 text-primary" />
@@ -402,6 +415,35 @@ export default function AuthModal({ children }: AuthModalProps) {
             </Form>
           </TabsContent>
         </Tabs>
+        
+        <DialogFooter className="flex flex-col space-y-2 mt-6">
+          <div className="text-xs text-center text-muted-foreground">
+            {activeTab === "login" ? (
+              <p>
+                Don't have an account?{" "}
+                <span 
+                  className="text-primary cursor-pointer hover:underline" 
+                  onClick={() => setActiveTab("register")}
+                >
+                  Register
+                </span>
+              </p>
+            ) : (
+              <p>
+                Already have an account?{" "}
+                <span 
+                  className="text-primary cursor-pointer hover:underline" 
+                  onClick={() => setActiveTab("login")}
+                >
+                  Login
+                </span>
+              </p>
+            )}
+          </div>
+          <div className="text-xs text-center text-muted-foreground">
+            By using this service, you agree to our Terms of Service and Privacy Policy.
+          </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
