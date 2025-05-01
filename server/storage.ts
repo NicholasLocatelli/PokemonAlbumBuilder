@@ -414,7 +414,7 @@ export class DatabaseStorage implements IStorage {
         );
         
         // Map the results to match the expected Album type
-        return rawResults.rows.map(row => ({
+        return rawResults.rows.map((row: any) => ({
           id: row.id,
           name: row.name,
           gridSize: row.grid_size,
@@ -451,7 +451,7 @@ export class DatabaseStorage implements IStorage {
         if (rawResults.rows.length === 0) return undefined;
         
         // Map the result to match the expected Album type
-        const row = rawResults.rows[0];
+        const row: any = rawResults.rows[0];
         return {
           id: row.id,
           name: row.name,
@@ -479,7 +479,7 @@ export class DatabaseStorage implements IStorage {
         );
         
         // Map the results to match the expected Album type
-        return rawResults.rows.map(row => ({
+        return rawResults.rows.map((row: any) => ({
           id: row.id,
           name: row.name,
           gridSize: row.grid_size,

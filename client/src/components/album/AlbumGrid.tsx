@@ -38,7 +38,6 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
     }
     
     setLocalCards(newCards);
-    console.log('Cards initialized:', JSON.stringify(newCards));
   }, [cards, gridSize]);
   
   // Update cards on the server
@@ -49,7 +48,7 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
         .map((card, index) => card ? { ...card, position: index } : null)
         .filter(card => card !== null);
       
-      console.log('Sending cards update:', JSON.stringify(filteredCards));
+      // Send cards update to the server
       const res = await apiRequest("PATCH", `/api/pages/${pageId}/cards`, { 
         cards: filteredCards 
       });
@@ -135,7 +134,7 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
 
   // Handle card repositioning through drag and drop
   const handleCardMove = (fromPosition: number, toPosition: number) => {
-    console.log(`Moving card from position ${fromPosition} to ${toPosition}`);
+    // Handle repositioning cards between different slots
     
     // Only proceed if positions are different and valid
     if (fromPosition === toPosition || 
