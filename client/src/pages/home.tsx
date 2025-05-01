@@ -16,13 +16,7 @@ import {
   DialogDescription,
   DialogFooter
 } from "@/components/ui/dialog";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+// Select components removed since we're using a grid layout instead
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { Album } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
@@ -224,7 +218,7 @@ export default function Home() {
       
       {/* Select Album Dialog */}
       <Dialog open={selectDialogOpen} onOpenChange={setSelectDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>Open Album</DialogTitle>
             <DialogDescription>
@@ -240,18 +234,23 @@ export default function Home() {
             ) : albumsQuery.data?.length === 0 ? (
               <div className="text-center py-4">No albums found. Create one first!</div>
             ) : (
-              <Select value={selectedAlbumId} onValueChange={setSelectedAlbumId}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select an album" />
-                </SelectTrigger>
-                <SelectContent>
-                  {albumsQuery.data?.map(album => (
-                    <SelectItem key={album.id} value={album.id.toString()}>
-                      {album.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[400px] overflow-y-auto p-1">
+                {albumsQuery.data?.map(album => (
+                  <div 
+                    key={album.id} 
+                    className={`p-3 border rounded-lg cursor-pointer hover:border-primary transition-all hover:shadow-md ${selectedAlbumId === album.id.toString() ? 'border-primary bg-primary/10 ring-1 ring-primary' : 'border-border'}`}
+                    onClick={() => setSelectedAlbumId(album.id.toString())}
+                  >
+                    <div 
+                      className="w-full aspect-[2/3] mb-2 rounded flex items-center justify-center shadow-sm" 
+                      style={{ backgroundColor: album.coverColor || '#2563eb' }}
+                    >
+                      <span className="text-white font-medium text-sm text-center px-2 drop-shadow-sm">{album.name}</span>
+                    </div>
+                    <p className="text-center text-sm truncate font-medium">{album.name}</p>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
           
