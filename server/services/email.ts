@@ -1,11 +1,14 @@
 import { MailService } from '@sendgrid/mail';
 
-if (!process.env.SENDGRID_API_KEY) {
+// Safely access the API key with proper type checking
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
+
+if (!SENDGRID_API_KEY) {
   console.warn("SENDGRID_API_KEY environment variable is not set, email functionality may not work properly");
 }
 
 const mailService = new MailService();
-mailService.setApiKey(process.env.SENDGRID_API_KEY || '');
+mailService.setApiKey(SENDGRID_API_KEY || '');
 
 interface EmailParams {
   to: string;
@@ -21,12 +24,12 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
       to: params.to,
       from: params.from,
       subject: params.subject,
-      text: params.text,
-      html: params.html,
+      text: params.text || '',  // Ensure not undefined
+      html: params.html || '',  // Ensure not undefined
     });
     return true;
   } catch (error) {
-    console.error('SendGrid email error:', error);
+    console.error('SendGrid email error:', error instanceof Error ? error.message : String(error));
     return false;
   }
 }
