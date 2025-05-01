@@ -44,6 +44,7 @@ export const albums = pgTable("albums", {
   name: text("name").notNull(),
   gridSize: integer("grid_size").notNull(), // 4, 9, or 12
   userId: integer("user_id").references(() => users.id), // Album can optionally belong to a user
+  coverColor: text("cover_color").default("#2563eb"), // Default blue color for album cover
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
