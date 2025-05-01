@@ -118,6 +118,7 @@ export class MemStorage implements IStorage {
       name: album.name,
       gridSize: album.gridSize,
       userId: album.userId || null,
+      coverColor: "#2563eb",
       createdAt: new Date() 
     };
     this.albums.set(id, newAlbum);

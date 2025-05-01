@@ -3,7 +3,7 @@ import { useParams, useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Edit2, BookOpen, Check } from 'lucide-react';
+import { ArrowLeft, Pencil, BookOpen, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { HexColorPicker } from 'react-colorful';
 import { Input } from '@/components/ui/input';

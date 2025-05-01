@@ -53,6 +53,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const album = await storage.updateAlbumGridSize(id, gridSize);
     res.json(album);
   });
+  
+  app.patch("/api/albums/:id/cover-color", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { coverColor } = z.object({ coverColor: z.string().regex(/^#[0-9A-F]{6}$/i) }).parse(req.body);
+      const album = await storage.updateAlbumCoverColor(id, coverColor);
+      res.json(album);
+    } catch (error) {
+      console.error('Error updating album cover color:', error);
+      res.status(400).json({ error: 'Invalid cover color format' });
+    }
+  });
 
   // Page routes
   app.post("/api/pages", async (req, res) => {

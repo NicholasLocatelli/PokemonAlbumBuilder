@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { BookOpen, Pencil } from "lucide-react";
 import { 
   Dialog,
   DialogContent,
@@ -254,12 +255,28 @@ export default function Home() {
             )}
           </div>
           
-          <DialogFooter>
+          <DialogFooter className="flex gap-2">
             <Button 
               onClick={handleOpenAlbum}
               disabled={!selectedAlbumId}
+              className="flex-1"
             >
+              <BookOpen className="mr-2 h-4 w-4" />
               Open Album
+            </Button>
+            <Button 
+              variant="outline"
+              disabled={!selectedAlbumId}
+              className="flex-1"
+              onClick={() => {
+                if (selectedAlbumId) {
+                  setSelectDialogOpen(false);
+                  setLocation(`/album-cover/${selectedAlbumId}`);
+                }
+              }}
+            >
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit Cover
             </Button>
           </DialogFooter>
         </DialogContent>
