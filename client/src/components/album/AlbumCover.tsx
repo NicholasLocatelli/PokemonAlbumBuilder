@@ -121,7 +121,7 @@ export default function AlbumCover() {
                     setIsEditing(true);
                   }}
                 >
-                  <Edit2 className="h-4 w-4" />
+                  <Pencil className="h-4 w-4" />
                 </Button>
               )}
             </div>
