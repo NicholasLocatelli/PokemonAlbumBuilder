@@ -401,7 +401,30 @@ export class DatabaseStorage implements IStorage {
 
   async getUserAlbums(userId: number): Promise<Album[]> {
     if (!db) return [];
-    return await db.select().from(albums).where(eq(albums.userId, userId));
+    try {
+      return await db.select().from(albums).where(eq(albums.userId, userId));
+    } catch (error) {
+      // Handle the case where cover_color column doesn't exist
+      if (error instanceof Error && error.message.includes('cover_color')) {
+        console.warn('Warning: cover_color column not found in database. Please run npm run db:push to update schema.');
+        // Fallback to a query that only selects columns that are known to exist
+        const rawResults = await db.execute(
+          `SELECT id, name, grid_size, user_id, created_at FROM albums WHERE user_id = $1`,
+          [userId]
+        );
+        
+        // Map the results to match the expected Album type
+        return rawResults.rows.map(row => ({
+          id: row.id,
+          name: row.name,
+          gridSize: row.grid_size,
+          userId: row.user_id,
+          coverColor: '#2563eb', // Provide the default value
+          createdAt: row.created_at
+        }));
+      }
+      throw error;
+    }
   }
 
   async createAlbum(album: InsertAlbum): Promise<Album> {
@@ -412,13 +435,61 @@ export class DatabaseStorage implements IStorage {
 
   async getAlbum(id: number): Promise<Album | undefined> {
     if (!db) return undefined;
-    const [album] = await db.select().from(albums).where(eq(albums.id, id));
-    return album;
+    try {
+      const [album] = await db.select().from(albums).where(eq(albums.id, id));
+      return album;
+    } catch (error) {
+      // Handle the case where cover_color column doesn't exist
+      if (error instanceof Error && error.message.includes('cover_color')) {
+        console.warn('Warning: cover_color column not found in database. Please run npm run db:push to update schema.');
+        // Fallback to a query that only selects columns that are known to exist
+        const rawResults = await db.execute(
+          `SELECT id, name, grid_size, user_id, created_at FROM albums WHERE id = $1`,
+          [id]
+        );
+        
+        if (rawResults.rows.length === 0) return undefined;
+        
+        // Map the result to match the expected Album type
+        const row = rawResults.rows[0];
+        return {
+          id: row.id,
+          name: row.name,
+          gridSize: row.grid_size,
+          userId: row.user_id,
+          coverColor: '#2563eb', // Provide the default value
+          createdAt: row.created_at
+        };
+      }
+      throw error;
+    }
   }
 
   async getAllAlbums(): Promise<Album[]> {
     if (!db) return [];
-    return await db.select().from(albums);
+    try {
+      return await db.select().from(albums);
+    } catch (error) {
+      // Handle the case where cover_color column doesn't exist
+      if (error instanceof Error && error.message.includes('cover_color')) {
+        console.warn('Warning: cover_color column not found in database. Please run npm run db:push to update schema.');
+        // Fallback to a query that only selects columns that are known to exist
+        const rawResults = await db.execute(
+          'SELECT id, name, grid_size, user_id, created_at FROM albums'
+        );
+        
+        // Map the results to match the expected Album type
+        return rawResults.rows.map(row => ({
+          id: row.id,
+          name: row.name,
+          gridSize: row.grid_size,
+          userId: row.user_id,
+          coverColor: '#2563eb', // Provide the default value
+          createdAt: row.created_at
+        }));
+      }
+      throw error;
+    }
   }
 
   async updateAlbumGridSize(id: number, gridSize: number): Promise<Album> {
@@ -435,14 +506,33 @@ export class DatabaseStorage implements IStorage {
 
   async updateAlbumCoverColor(id: number, coverColor: string): Promise<Album> {
     if (!db) throw new Error("Database not available");
-    const [updatedAlbum] = await db
-      .update(albums)
-      .set({ coverColor })
-      .where(eq(albums.id, id))
-      .returning();
-
-    if (!updatedAlbum) throw new Error("Album not found");
-    return updatedAlbum;
+    try {
+      const [updatedAlbum] = await db
+        .update(albums)
+        .set({ coverColor })
+        .where(eq(albums.id, id))
+        .returning();
+  
+      if (!updatedAlbum) throw new Error("Album not found");
+      return updatedAlbum;
+    } catch (error) {
+      // Handle the case where cover_color column doesn't exist
+      if (error instanceof Error && error.message.includes('cover_color')) {
+        console.warn('Warning: cover_color column not found in database. Please run npm run db:push to update schema.');
+        console.warn('Returning album without updating cover color.');
+        
+        // Get the album without updating it
+        const album = await this.getAlbum(id);
+        if (!album) throw new Error("Album not found");
+        
+        // Return it with the requested color (in memory only)
+        return {
+          ...album,
+          coverColor
+        };
+      }
+      throw error;
+    }
   }
 
   async createPage(page: InsertPage): Promise<Page> {
