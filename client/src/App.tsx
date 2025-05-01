@@ -15,6 +15,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/album/:id" component={Album} />
+      <Route path="/album-cover/:id" component={AlbumCover} />
       <Route component={NotFound} />
     </Switch>
   );

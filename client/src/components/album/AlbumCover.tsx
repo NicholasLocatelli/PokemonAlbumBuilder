@@ -20,19 +20,21 @@ export default function AlbumCover() {
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const [coverColor, setCoverColor] = useState('#2563eb');
 
-  const albumQuery = useQuery({
+  const albumQuery = useQuery<Album>({
     queryKey: [`/api/albums/${albumId}`],
     queryFn: async () => {
       const res = await fetch(`/api/albums/${albumId}`);
       if (!res.ok) throw new Error('Failed to load album');
       return res.json() as Promise<Album>;
-    },
-    onSuccess: (data) => {
-      if (data.coverColor) {
-        setCoverColor(data.coverColor);
-      }
     }
   });
+  
+  // Set the cover color when album data is loaded
+  React.useEffect(() => {
+    if (albumQuery.data?.coverColor) {
+      setCoverColor(albumQuery.data.coverColor);
+    }
+  }, [albumQuery.data]);
 
   const updateCoverColor = useMutation({
     mutationFn: async () => {

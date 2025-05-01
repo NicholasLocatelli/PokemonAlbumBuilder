@@ -17,6 +17,7 @@ export interface IStorage {
   getAllAlbums(): Promise<Album[]>;
   getUserAlbums(userId: number): Promise<Album[]>;
   updateAlbumGridSize(id: number, gridSize: number): Promise<Album>;
+  updateAlbumCoverColor(id: number, coverColor: string): Promise<Album>;
 
   // Page operations
   createPage(page: InsertPage): Promise<Page>;
@@ -63,6 +64,7 @@ export class MemStorage implements IStorage {
       name: "Test Album",
       gridSize: 9,
       userId: null,
+      coverColor: "#2563eb",
       createdAt: new Date()
     };
     this.albums.set(testAlbum.id, testAlbum);
@@ -135,6 +137,15 @@ export class MemStorage implements IStorage {
     if (!album) throw new Error("Album not found");
 
     const updatedAlbum = { ...album, gridSize };
+    this.albums.set(id, updatedAlbum);
+    return updatedAlbum;
+  }
+
+  async updateAlbumCoverColor(id: number, coverColor: string): Promise<Album> {
+    const album = await this.getAlbum(id);
+    if (!album) throw new Error("Album not found");
+
+    const updatedAlbum = { ...album, coverColor };
     this.albums.set(id, updatedAlbum);
     return updatedAlbum;
   }
@@ -414,6 +425,18 @@ export class DatabaseStorage implements IStorage {
     const [updatedAlbum] = await db
       .update(albums)
       .set({ gridSize })
+      .where(eq(albums.id, id))
+      .returning();
+
+    if (!updatedAlbum) throw new Error("Album not found");
+    return updatedAlbum;
+  }
+
+  async updateAlbumCoverColor(id: number, coverColor: string): Promise<Album> {
+    if (!db) throw new Error("Database not available");
+    const [updatedAlbum] = await db
+      .update(albums)
+      .set({ coverColor })
       .where(eq(albums.id, id))
       .returning();
 
