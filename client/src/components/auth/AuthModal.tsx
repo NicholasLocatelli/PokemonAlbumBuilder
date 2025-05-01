@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Tabs,
@@ -24,10 +25,15 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, EyeIcon, EyeOffIcon, KeyIcon, UserIcon, AlertCircle } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 const loginSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
@@ -54,10 +60,22 @@ type AuthModalProps = {
 };
 
 export default function AuthModal({ children }: AuthModalProps) {
-  const { login, register, isLoading } = useAuth();
+  const { login, register, isLoading, error: authError } = useAuth();
+  const { toast } = useToast();
+  const isMobile = useIsMobile();
+  
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  // Reset form error when tab changes or dialog closes
+  useEffect(() => {
+    setFormError(null);
+  }, [activeTab, open]);
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -77,13 +95,28 @@ export default function AuthModal({ children }: AuthModalProps) {
     },
   });
 
+  // Handle forgot password
+  const handleForgotPassword = () => {
+    toast({
+      title: "Password Reset",
+      description: "This feature is coming soon. Please contact support if you need to reset your password.",
+      variant: "default",
+    });
+  };
+
   const onLoginSubmit = async (data: LoginFormData) => {
     setIsSubmitting(true);
+    setFormError(null);
     try {
       await login(data.username, data.password);
       setOpen(false);
     } catch (error) {
-      // Error is handled in useAuth
+      // Show error in the form
+      if (error instanceof Error) {
+        setFormError(error.message);
+      } else {
+        setFormError("Login failed. Please check your credentials and try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -91,11 +124,17 @@ export default function AuthModal({ children }: AuthModalProps) {
 
   const onRegisterSubmit = async (data: RegisterFormData) => {
     setIsSubmitting(true);
+    setFormError(null);
     try {
       await register(data.username, data.password, data.displayName || undefined);
       setOpen(false);
     } catch (error) {
-      // Error is handled in useAuth
+      // Show error in the form
+      if (error instanceof Error) {
+        setFormError(error.message);
+      } else {
+        setFormError("Registration failed. Please try a different username.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -106,11 +145,21 @@ export default function AuthModal({ children }: AuthModalProps) {
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Pokémon Card Album</DialogTitle>
+          <DialogTitle className="text-xl md:text-2xl flex items-center gap-2">
+            <KeyIcon className="h-6 w-6 text-primary" />
+            Pokémon Card Album
+          </DialogTitle>
           <DialogDescription>
             Sign in to save and manage your card collections
           </DialogDescription>
         </DialogHeader>
+
+        {formError && (
+          <Alert variant="destructive" className="mt-2">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{formError}</AlertDescription>
+          </Alert>
+        )}
 
         <Tabs
           defaultValue="login"
@@ -118,9 +167,15 @@ export default function AuthModal({ children }: AuthModalProps) {
           onValueChange={setActiveTab}
           className="w-full mt-4"
         >
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login">Login</TabsTrigger>
-            <TabsTrigger value="register">Register</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 mb-2">
+            <TabsTrigger value="login" className="text-base">
+              <UserIcon className="h-4 w-4 mr-2" />
+              Login
+            </TabsTrigger>
+            <TabsTrigger value="register" className="text-base">
+              <KeyIcon className="h-4 w-4 mr-2" />
+              Register
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="login" className="mt-4">
@@ -134,9 +189,16 @@ export default function AuthModal({ children }: AuthModalProps) {
                   name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Username</FormLabel>
+                      <FormLabel className="text-base">Username</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter your username" {...field} />
+                        <div className="relative">
+                          <UserIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            placeholder="Enter your username" 
+                            className="pl-9" 
+                            {...field} 
+                          />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -148,13 +210,35 @@ export default function AuthModal({ children }: AuthModalProps) {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <div className="flex items-center justify-between">
+                        <FormLabel className="text-base">Password</FormLabel>
+                        <span
+                          onClick={handleForgotPassword}
+                          className="text-xs text-primary cursor-pointer hover:underline"
+                        >
+                          Forgot Password?
+                        </span>
+                      </div>
                       <FormControl>
-                        <Input
-                          type="password"
-                          placeholder="Enter your password"
-                          {...field}
-                        />
+                        <div className="relative">
+                          <KeyIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            type={showLoginPassword ? "text" : "password"}
+                            placeholder="Enter your password"
+                            className="pl-9 pr-9" 
+                            {...field}
+                          />
+                          <div 
+                            className="absolute right-3 top-3 cursor-pointer" 
+                            onClick={() => setShowLoginPassword(!showLoginPassword)}
+                          >
+                            {showLoginPassword ? (
+                              <EyeOffIcon className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <EyeIcon className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </div>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -163,12 +247,12 @@ export default function AuthModal({ children }: AuthModalProps) {
 
                 <Button
                   type="submit"
-                  className="w-full"
+                  className="w-full text-base py-6"
                   disabled={isSubmitting || isLoading}
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                       Logging in...
                     </>
                   ) : (
@@ -190,10 +274,20 @@ export default function AuthModal({ children }: AuthModalProps) {
                   name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Username</FormLabel>
+                      <FormLabel className="text-base">Username</FormLabel>
                       <FormControl>
-                        <Input placeholder="Choose a username" {...field} />
+                        <div className="relative">
+                          <UserIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            placeholder="Choose a username" 
+                            className="pl-9" 
+                            {...field} 
+                          />
+                        </div>
                       </FormControl>
+                      <FormDescription className="text-xs">
+                        This will be your login name and cannot be changed later.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -204,13 +298,20 @@ export default function AuthModal({ children }: AuthModalProps) {
                   name="displayName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Display Name (Optional)</FormLabel>
+                      <FormLabel className="text-base">Display Name (Optional)</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="How you want to be known"
-                          {...field}
-                        />
+                        <div className="relative">
+                          <UserIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            placeholder="How you want to be known"
+                            className="pl-9"
+                            {...field}
+                          />
+                        </div>
                       </FormControl>
+                      <FormDescription className="text-xs">
+                        This is how your name will appear in the app.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -221,14 +322,31 @@ export default function AuthModal({ children }: AuthModalProps) {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <FormLabel className="text-base">Password</FormLabel>
                       <FormControl>
-                        <Input
-                          type="password"
-                          placeholder="Create a password"
-                          {...field}
-                        />
+                        <div className="relative">
+                          <KeyIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            type={showRegisterPassword ? "text" : "password"}
+                            placeholder="Create a password"
+                            className="pl-9 pr-9"
+                            {...field}
+                          />
+                          <div 
+                            className="absolute right-3 top-3 cursor-pointer" 
+                            onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                          >
+                            {showRegisterPassword ? (
+                              <EyeOffIcon className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <EyeIcon className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </div>
+                        </div>
                       </FormControl>
+                      <FormDescription className="text-xs">
+                        Password must be at least 6 characters long.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -239,13 +357,27 @@ export default function AuthModal({ children }: AuthModalProps) {
                   name="confirmPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Confirm Password</FormLabel>
+                      <FormLabel className="text-base">Confirm Password</FormLabel>
                       <FormControl>
-                        <Input
-                          type="password"
-                          placeholder="Confirm your password"
-                          {...field}
-                        />
+                        <div className="relative">
+                          <KeyIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            type={showConfirmPassword ? "text" : "password"}
+                            placeholder="Confirm your password"
+                            className="pl-9 pr-9"
+                            {...field}
+                          />
+                          <div 
+                            className="absolute right-3 top-3 cursor-pointer" 
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          >
+                            {showConfirmPassword ? (
+                              <EyeOffIcon className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <EyeIcon className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </div>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -254,12 +386,12 @@ export default function AuthModal({ children }: AuthModalProps) {
 
                 <Button
                   type="submit"
-                  className="w-full"
+                  className="w-full text-base py-6 mt-4"
                   disabled={isSubmitting || isLoading}
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                       Creating account...
                     </>
                   ) : (
