@@ -32,21 +32,12 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: varchar("username", { length: 50 }).notNull().unique(),
   password: text("password").notNull(), // Will store hashed password
-  email: varchar("email", { length: 255 }),
   displayName: varchar("display_name", { length: 100 }),
   avatarUrl: text("avatar_url"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// Password reset tokens table
-export const passwordResetTokens = pgTable("password_reset_tokens", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  token: text("token").notNull().unique(),
-  expiresAt: timestamp("expires_at").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  used: varchar("used", { length: 1 }).notNull().default("0"),
-});
+// We'll add password reset tokens after the email field is added
 
 export const albums = pgTable("albums", {
   id: serial("id").primaryKey(),
@@ -93,8 +84,9 @@ export const insertAlbumSchema = createInsertSchema(albums)
 export const insertPageSchema = createInsertSchema(pages)
   .omit({ id: true });
 
-export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTokens)
-  .omit({ id: true, createdAt: true });
+// Will add this back when we implement password reset
+// export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTokens)
+//  .omit({ id: true, createdAt: true });
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -102,5 +94,6 @@ export type Album = typeof albums.$inferSelect;
 export type InsertAlbum = z.infer<typeof insertAlbumSchema>;
 export type Page = typeof pages.$inferSelect;
 export type InsertPage = z.infer<typeof insertPageSchema>;
-export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
-export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;
+// Will add these back when we implement password reset
+// export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+// export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;
