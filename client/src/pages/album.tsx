@@ -97,8 +97,8 @@ export default function AlbumPage() {
   // Create a style object with the background color from the album's cover color
   const coverColor = albumQuery.data.coverColor || '#2563eb'; // Use blue as fallback if no color set
   const albumBackgroundStyle = {
-    backgroundColor: `${coverColor}10`, // Add 10% opacity
-    backgroundImage: `linear-gradient(to bottom, ${coverColor}05, ${coverColor}15)`, // Subtle gradient
+    backgroundColor: `${coverColor}30`, // Increase opacity to 30%
+    backgroundImage: `linear-gradient(to bottom, ${coverColor}20, ${coverColor}40)`, // More visible gradient
   };
 
   return (

@@ -187,16 +187,17 @@ export default function AlbumGrid({ gridSize, cards, pageId, coverColor = '#2563
 
   // Create grid background style using the coverColor
   const gridStyle = {
-    backgroundColor: `${coverColor}30`, // 30% opacity
-    borderColor: isOver ? coverColor : `${coverColor}60`, // 60% opacity for the border
-    boxShadow: `0 4px 30px ${coverColor}15, inset 0 1px 30px ${coverColor}10` // Add a subtle shadow with album color
+    backgroundColor: `${coverColor}40`, // 40% opacity
+    borderColor: isOver ? coverColor : `${coverColor}70`, // 70% opacity for the border
+    boxShadow: `0 4px 30px ${coverColor}50, inset 0 1px 30px ${coverColor}30`, // More prominent shadow with album color
+    borderWidth: '3px',
   };
 
   return (
     <>
       <div
         ref={drop}
-        className={`grid ${gridCols} gap-6 p-8 rounded-lg shadow-lg min-h-[600px] border-2 border-dashed transition-all duration-300 bg-background/80 backdrop-blur-sm`}
+        className={`grid ${gridCols} gap-6 p-8 rounded-lg shadow-lg min-h-[600px] border-dashed transition-all duration-300 bg-background/80 backdrop-blur-sm`}
         style={gridStyle}
       >
         {localCards.map((card, i) => (
