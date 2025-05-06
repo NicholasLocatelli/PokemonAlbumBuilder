@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import CardSlot from '../../client/src/components/album/CardSlot';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import React from 'react';
 
 // Helper component to wrap CardSlot with DndProvider
 const DndWrapper = ({ children }: { children: React.ReactNode }) => (

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import PageControls from '../../client/src/components/album/PageControls';
+import React from 'react';
 
 describe('PageControls Component', () => {
   it('renders with the correct current page', () => {

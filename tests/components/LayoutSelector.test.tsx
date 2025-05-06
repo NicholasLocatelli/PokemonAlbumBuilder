@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import LayoutSelector from '../../client/src/components/album/LayoutSelector';
+import React from 'react';
 
 describe('LayoutSelector Component', () => {
   it('renders with the current grid size selected', () => {

@@ -1,6 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response } from 'express';
 import { MemStorage } from '../../server/storage';
+import type { User } from '../../shared/schema';
+
+// Define a custom request type that includes the user property
+interface AuthenticatedRequest extends Request {
+  user: {
+    id: number;
+    username: string;
+    [key: string]: any;
+  };
+}
 
 // Create mock request and response objects
 function createMockReq(params = {}, body = {}, query = {}) {
@@ -10,7 +20,7 @@ function createMockReq(params = {}, body = {}, query = {}) {
     query,
     isAuthenticated: vi.fn().mockReturnValue(true),
     user: { id: 1, username: 'testuser' }
-  } as unknown as Request;
+  } as unknown as AuthenticatedRequest;
 }
 
 function createMockRes() {
@@ -35,23 +45,23 @@ async function getAlbum(req: Request, res: Response, storage: MemStorage) {
   return res.json(album);
 }
 
-async function getUserAlbums(req: Request, res: Response, storage: MemStorage) {
+async function getUserAlbums(req: AuthenticatedRequest, res: Response, storage: MemStorage) {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
   
-  const albums = await storage.getUserAlbums(req.user!.id);
+  const albums = await storage.getUserAlbums(req.user.id);
   return res.json(albums);
 }
 
-async function createAlbum(req: Request, res: Response, storage: MemStorage) {
+async function createAlbum(req: AuthenticatedRequest, res: Response, storage: MemStorage) {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
   
   const album = await storage.createAlbum({
     ...req.body,
-    userId: req.user!.id
+    userId: req.user.id
   });
   
   return res.status(201).json(album);
