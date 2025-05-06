@@ -17,7 +17,7 @@ describe('PageControls Component', () => {
     render(<PageControls currentPage={3} onPageChange={onPageChange} />);
     
     // Find the previous button and click it
-    const prevButton = screen.getByLabelText('Previous page');
+    const prevButton = screen.getByRole('button', { name: /chevron-left/i });
     fireEvent.click(prevButton);
     
     // onPageChange should be called with current page - 1
