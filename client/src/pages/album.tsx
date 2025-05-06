@@ -94,19 +94,26 @@ export default function AlbumPage() {
   const page = pageQuery.data;
   const needsPageCreation = pageQuery.data === null;
 
+  // Create a style object with the background color from the album's cover color
+  const coverColor = albumQuery.data.coverColor || '#2563eb'; // Use blue as fallback if no color set
+  const albumBackgroundStyle = {
+    backgroundColor: `${coverColor}10`, // Add 10% opacity
+    backgroundImage: `linear-gradient(to bottom, ${coverColor}05, ${coverColor}15)`, // Subtle gradient
+  };
+
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen transition-colors duration-300" style={albumBackgroundStyle}>
+      <div className="max-w-7xl mx-auto p-6 space-y-6">
         <Button 
           variant="ghost" 
-          className="mb-4 flex items-center gap-2" 
+          className="mb-4 flex items-center gap-2 bg-background/70 backdrop-blur-sm hover:bg-background/80" 
           onClick={() => setLocation("/")}
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Home
         </Button>
         
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center bg-background/70 backdrop-blur-sm p-4 rounded-lg">
           <h1 className="text-3xl font-bold">{albumQuery.data.name}</h1>
           <LayoutSelector
             currentSize={albumQuery.data.gridSize}
@@ -116,7 +123,7 @@ export default function AlbumPage() {
 
         <div className="space-y-6">
           {needsPageCreation ? (
-            <div className="bg-card p-8 rounded-lg text-center">
+            <div className="bg-card/90 backdrop-blur-sm p-8 rounded-lg text-center shadow-lg border border-muted">
               <p className="text-lg mb-4">Page {currentPage} hasn't been created yet</p>
               <Button onClick={() => createPage.mutate()}>
                 Create Page {currentPage}
@@ -127,6 +134,7 @@ export default function AlbumPage() {
               gridSize={albumQuery.data.gridSize}
               cards={page?.cards || []}
               pageId={page?.id || 0}
+              coverColor={coverColor} // Pass the cover color to AlbumGrid
             />
           )}
           <PageControls

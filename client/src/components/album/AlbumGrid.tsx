@@ -11,9 +11,10 @@ interface AlbumGridProps {
   gridSize: number;
   cards: Array<{position: number; cardId: string} | null>;
   pageId: number;
+  coverColor?: string; // Optional prop for the album cover color
 }
 
-export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
+export default function AlbumGrid({ gridSize, cards, pageId, coverColor = '#2563eb' }: AlbumGridProps) {
   const { id: albumId } = useParams();
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [activePosition, setActivePosition] = useState<number | null>(null);
@@ -184,11 +185,19 @@ export default function AlbumGrid({ gridSize, cards, pageId }: AlbumGridProps) {
                   gridSize === 9 ? 'grid-cols-3' :
                   'grid-cols-4';
 
+  // Create grid background style using the coverColor
+  const gridStyle = {
+    backgroundColor: `${coverColor}30`, // 30% opacity
+    borderColor: isOver ? coverColor : `${coverColor}60`, // 60% opacity for the border
+    boxShadow: `0 4px 30px ${coverColor}15, inset 0 1px 30px ${coverColor}10` // Add a subtle shadow with album color
+  };
+
   return (
     <>
       <div
         ref={drop}
-        className={`grid ${gridCols} gap-6 bg-card p-8 rounded-lg shadow-lg min-h-[600px] border-2 ${isOver ? 'border-primary' : 'border-primary/20'} border-dashed transition-colors duration-200`}
+        className={`grid ${gridCols} gap-6 p-8 rounded-lg shadow-lg min-h-[600px] border-2 border-dashed transition-all duration-300 bg-background/80 backdrop-blur-sm`}
+        style={gridStyle}
       >
         {localCards.map((card, i) => (
           <CardSlot
