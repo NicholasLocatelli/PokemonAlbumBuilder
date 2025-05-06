@@ -16,8 +16,9 @@ describe('PageControls Component', () => {
     const onPageChange = vi.fn();
     render(<PageControls currentPage={3} onPageChange={onPageChange} />);
     
-    // Find the previous button and click it
-    const prevButton = screen.getByRole('button', { name: /chevron-left/i });
+    // Find the previous button (first button in the component) and click it
+    const buttons = screen.getAllByRole('button');
+    const prevButton = buttons[0]; // First button is previous
     fireEvent.click(prevButton);
     
     // onPageChange should be called with current page - 1
@@ -28,8 +29,9 @@ describe('PageControls Component', () => {
     const onPageChange = vi.fn();
     render(<PageControls currentPage={3} onPageChange={onPageChange} />);
     
-    // Find the next button and click it
-    const nextButton = screen.getByRole('button', { name: /chevron-right/i });
+    // Find the next button (second button in the component) and click it
+    const buttons = screen.getAllByRole('button');
+    const nextButton = buttons[1]; // Second button is next
     fireEvent.click(nextButton);
     
     // onPageChange should be called with current page + 1
@@ -41,7 +43,8 @@ describe('PageControls Component', () => {
     render(<PageControls currentPage={1} onPageChange={onPageChange} />);
     
     // Previous button should be disabled
-    const prevButton = screen.getByRole('button', { name: /chevron-left/i });
+    const buttons = screen.getAllByRole('button');
+    const prevButton = buttons[0]; // First button is previous
     expect(prevButton).toBeDisabled();
     
     // Click should not trigger onPageChange
