@@ -4,13 +4,31 @@ import CardSlot from '../../client/src/components/album/CardSlot';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// Helper component to wrap CardSlot with DndProvider
-const DndWrapper = ({ children }: { children: React.ReactNode }) => (
-  <DndProvider backend={HTML5Backend}>
-    {children}
-  </DndProvider>
-);
+// Create a new QueryClient for each test
+const createTestQueryClient = () => new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Turn off retries and make everything synchronous for tests
+      retry: false,
+      cacheTime: 0,
+      staleTime: 0
+    },
+  },
+});
+
+// Helper component to wrap CardSlot with DndProvider and QueryClientProvider
+const TestWrapper = ({ children }: { children: React.ReactNode }) => {
+  const testQueryClient = createTestQueryClient();
+  return (
+    <QueryClientProvider client={testQueryClient}>
+      <DndProvider backend={HTML5Backend}>
+        {children}
+      </DndProvider>
+    </QueryClientProvider>
+  );
+};
 
 describe('CardSlot Component', () => {
   it('renders an empty slot when card is null', () => {

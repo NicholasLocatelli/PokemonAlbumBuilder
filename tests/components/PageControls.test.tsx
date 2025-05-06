@@ -29,7 +29,7 @@ describe('PageControls Component', () => {
     render(<PageControls currentPage={3} onPageChange={onPageChange} />);
     
     // Find the next button and click it
-    const nextButton = screen.getByLabelText('Next page');
+    const nextButton = screen.getByRole('button', { name: /chevron-right/i });
     fireEvent.click(nextButton);
     
     // onPageChange should be called with current page + 1
@@ -41,7 +41,7 @@ describe('PageControls Component', () => {
     render(<PageControls currentPage={1} onPageChange={onPageChange} />);
     
     // Previous button should be disabled
-    const prevButton = screen.getByLabelText('Previous page');
+    const prevButton = screen.getByRole('button', { name: /chevron-left/i });
     expect(prevButton).toBeDisabled();
     
     // Click should not trigger onPageChange
