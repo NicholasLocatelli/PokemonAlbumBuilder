@@ -9,7 +9,7 @@ describe('PageControls Component', () => {
     render(<PageControls currentPage={3} onPageChange={onPageChange} />);
     
     // Check if current page is displayed
-    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('Page 3')).toBeInTheDocument();
   });
 
   it('calls onPageChange with previous page when prev button is clicked', () => {
