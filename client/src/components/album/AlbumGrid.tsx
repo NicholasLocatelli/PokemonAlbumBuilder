@@ -197,6 +197,7 @@ export default function AlbumGrid({ gridSize, cards, pageId, coverColor = '#2563
     <>
       <div
         ref={drop}
+        data-testid="album-grid-container"
         className={`grid ${gridCols} gap-6 p-8 rounded-lg shadow-lg min-h-[600px] border-dashed transition-all duration-300 bg-background/80 backdrop-blur-sm`}
         style={gridStyle}
       >
