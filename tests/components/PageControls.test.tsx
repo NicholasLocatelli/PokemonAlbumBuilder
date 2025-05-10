@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import '@testing-library/jest-dom'; // Import jest-dom for extended matchers
 import PageControls from '../../client/src/components/album/PageControls';
 import React from 'react';
 

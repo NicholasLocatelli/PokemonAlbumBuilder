@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom'; // Import jest-dom for extended matchers
 import AlbumGrid from '../../client/src/components/album/AlbumGrid';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
