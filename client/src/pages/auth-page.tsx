@@ -54,11 +54,6 @@ export default function AuthPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // If the user is already logged in, redirect to home
-  if (user) {
-    return <Redirect to="/" />;
-  }
-
   // Reset form error when tab changes
   useEffect(() => {
     setFormError(null);
@@ -82,51 +77,7 @@ export default function AuthPage() {
     },
   });
 
-  // Handle forgot password
-  const handleForgotPassword = () => {
-    toast({
-      title: "Password Reset",
-      description: "This feature is coming soon. Please contact support if you need to reset your password.",
-      variant: "default",
-    });
-  };
-
-  const onLoginSubmit = async (data: LoginFormData) => {
-    setIsSubmitting(true);
-    setFormError(null);
-    try {
-      await login(data.username, data.password);
-      // No need to redirect, the component will automatically redirect when user state updates
-    } catch (error) {
-      // Show error in the form
-      if (error instanceof Error) {
-        setFormError(error.message);
-      } else {
-        setFormError("Login failed. Please check your credentials and try again.");
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const onRegisterSubmit = async (data: RegisterFormData) => {
-    setIsSubmitting(true);
-    setFormError(null);
-    try {
-      await register(data.username, data.password, data.displayName || undefined);
-      // No need to redirect, the component will automatically redirect when user state updates
-    } catch (error) {
-      // Show error in the form
-      if (error instanceof Error) {
-        setFormError(error.message);
-      } else {
-        setFormError("Registration failed. Please try a different username.");
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
+  // Define animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { 
@@ -190,6 +141,57 @@ export default function AuthPage() {
       }
     }
   };
+
+  // Handle forgot password
+  const handleForgotPassword = () => {
+    toast({
+      title: "Password Reset",
+      description: "This feature is coming soon. Please contact support if you need to reset your password.",
+      variant: "default",
+    });
+  };
+
+  const onLoginSubmit = async (data: LoginFormData) => {
+    setIsSubmitting(true);
+    setFormError(null);
+    try {
+      await login(data.username, data.password);
+      // No need to redirect, the component will automatically redirect when user state updates
+    } catch (error) {
+      // Show error in the form
+      if (error instanceof Error) {
+        setFormError(error.message);
+      } else {
+        setFormError("Login failed. Please check your credentials and try again.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const onRegisterSubmit = async (data: RegisterFormData) => {
+    setIsSubmitting(true);
+    setFormError(null);
+    try {
+      await register(data.username, data.password, data.displayName || undefined);
+      // No need to redirect, the component will automatically redirect when user state updates
+    } catch (error) {
+      // Show error in the form
+      if (error instanceof Error) {
+        setFormError(error.message);
+      } else {
+        setFormError("Registration failed. Please try a different username.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // If the user is already logged in, redirect to home
+  // This must come after all the hooks are called
+  if (user) {
+    return <Redirect to="/" />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row w-full">
