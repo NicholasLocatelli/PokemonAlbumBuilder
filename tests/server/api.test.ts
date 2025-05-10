@@ -155,7 +155,7 @@ describe('API Endpoints', () => {
     it('should return 401 when not authenticated', async () => {
       // Test the API handler with an unauthenticated request
       const req = createMockReq();
-      req.isAuthenticated = vi.fn().mockReturnValue(false);
+      req.isAuthenticated = vi.fn().mockReturnValue(false) as () => boolean;
       const res = createMockRes();
       
       await getUserAlbums(req, res, storage);

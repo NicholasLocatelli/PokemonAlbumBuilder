@@ -12,8 +12,9 @@ const createTestQueryClient = () => new QueryClient({
     queries: {
       // Turn off retries and make everything synchronous for tests
       retry: false,
-      // For React Query v5
-      gcTime: 0,
+      // For React Query v4/v5
+      gcTime: 0, // v5
+      // cacheTime: 0, // v4
       staleTime: 0
     },
   },
