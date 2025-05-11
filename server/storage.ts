@@ -40,7 +40,7 @@ function createAdvancedApiQuery(query: string, setId?: string): string {
            query.toLowerCase().includes('paldean')) {
     // For regional variants, split query and search for each term
     const terms = query.split(' ').filter(term => term.length > 0);
-    let apiQuery = terms.map(term => `name:"${term}"`).join(' ');
+    let apiQuery = terms.map(term => `name:${term}`).join(' ');
     
     // Add set filter if provided
     if (setId) {
@@ -51,7 +51,7 @@ function createAdvancedApiQuery(query: string, setId?: string): string {
   } 
   else {
     // For regular searches, use name search with wildcard
-    let apiQuery = `name:"${query}"*`;
+    let apiQuery = `name:${query}*`;
 
     // Add set filter if provided
     if (setId) {
