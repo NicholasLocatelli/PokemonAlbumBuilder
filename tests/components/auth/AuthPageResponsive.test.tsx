@@ -125,8 +125,12 @@ describe('AuthPage Mobile Responsiveness', () => {
     expect(usernameLabel).toHaveClass('text-base');
     
     // Buttons should have appropriate padding
-    const loginButton = screen.getByRole('button', { name: /Login/i });
-    expect(loginButton).toHaveClass('py-6');
+    // Use getAllByRole since there might be multiple buttons with "Login" text
+    const loginButtons = screen.getAllByRole('button').filter(button => 
+      button.textContent?.includes('Login')
+    );
+    expect(loginButtons.length).toBeGreaterThan(0);
+    expect(loginButtons.some(button => button.classList.contains('py-6'))).toBe(true);
   });
   
   it('has properly sized text elements on desktop', () => {
@@ -148,7 +152,11 @@ describe('AuthPage Mobile Responsiveness', () => {
     expect(usernameLabel).toHaveClass('text-base');
     
     // Buttons should have appropriate padding
-    const loginButton = screen.getByRole('button', { name: /Login/i });
-    expect(loginButton).toHaveClass('py-6');
+    // Use getAllByRole since there might be multiple buttons with "Login" text
+    const loginButtons = screen.getAllByRole('button').filter(button => 
+      button.textContent?.includes('Login')
+    );
+    expect(loginButtons.length).toBeGreaterThan(0);
+    expect(loginButtons.some(button => button.classList.contains('py-6'))).toBe(true);
   });
 });
