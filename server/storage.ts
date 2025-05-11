@@ -5,6 +5,63 @@ import session from "express-session";
 import ConnectPgSimple from "connect-pg-simple";
 import MemoryStore from "memorystore";
 
+/**
+ * Creates an advanced API query string for the Pokémon TCG API
+ * This handles special cases like regional variants (Galarian, Alolan, etc.)
+ * and set-specific card numbers (PAL001, SV2-023, etc.)
+ */
+function createAdvancedApiQuery(query: string, setId?: string): string {
+  // Check if query looks like a set-specific card number (e.g., PAL001, pal-001)
+  // Matches patterns like: PAL001, pal-001, PAL-001, SV2-023, etc.
+  const setSpecificRegex = /^([a-zA-Z]+)[-]?(\d+)$/;
+  const setSpecificMatch = query.match(setSpecificRegex);
+  
+  if (setSpecificMatch) {
+    // Extract the potential set code and number
+    const [_, potentialSetPrefix, cardNumber] = setSpecificMatch;
+    
+    if (setId) {
+      // If a set is already selected, just search by number in that set
+      return `number:${cardNumber} set.id:${setId}`;
+    } else {
+      // Search by card number across all sets
+      return `number:${cardNumber}`;
+    }
+  } 
+  // Check if query is numeric for set-specific number search
+  else if (setId && /^\d+$/.test(query)) {
+    // If we have a set ID and the query is a number, search by card number within that set
+    return `number:${query} set.id:${setId}`;
+  } 
+  // Handle searches for Pokémon variants like "Galarian Ponyta"
+  else if (query.toLowerCase().includes('galarian') || 
+           query.toLowerCase().includes('alolan') || 
+           query.toLowerCase().includes('hisuian') ||
+           query.toLowerCase().includes('paldean')) {
+    // For regional variants, split query and search for each term
+    const terms = query.split(' ').filter(term => term.length > 0);
+    let apiQuery = terms.map(term => `name:"${term}"`).join(' ');
+    
+    // Add set filter if provided
+    if (setId) {
+      apiQuery += ` set.id:${setId}`;
+    }
+    
+    return apiQuery;
+  } 
+  else {
+    // For regular searches, use name search with wildcard
+    let apiQuery = `name:"${query}"*`;
+
+    // Add set filter if provided
+    if (setId) {
+      apiQuery += ` set.id:${setId}`;
+    }
+    
+    return apiQuery;
+  }
+}
+
 export interface IStorage {
   // User operations
   createUser(user: InsertUser): Promise<User>;
