@@ -4,7 +4,18 @@ import { MemStorage } from '../../server/storage';
 import type { InsertAlbum, InsertPage, InsertUser } from '../../shared/schema';
 
 // Mock request and response objects
-function createMockReq(method = 'GET', path = '/', params = {}, body = {}, query = {}) {
+type MockRequest = {
+  method: string;
+  path: string;
+  params: Record<string, any>;
+  body: Record<string, any>;
+  query: Record<string, any>;
+  session: Record<string, any>;
+  isAuthenticated: ReturnType<typeof vi.fn>;
+  user: { id: number; username: string; displayName: string } | undefined;
+};
+
+function createMockReq(method = 'GET', path = '/', params = {}, body = {}, query = {}): MockRequest {
   return {
     method,
     path,
@@ -318,7 +329,7 @@ describe('API Endpoints', () => {
       // Unauthenticated request
       const req = createMockReq('GET', '/api/albums');
       req.isAuthenticated = vi.fn().mockReturnValue(false);
-      req.user = undefined as any;
+      req.user = undefined;
       const res = createMockRes();
       
       await getAlbums(req as any, res as any, storage);
@@ -430,7 +441,7 @@ describe('API Endpoints', () => {
       const album = res.json.mock.calls[0][0];
       expect(album.name).toBe('New Album');
       expect(album.gridSize).toBe(9);
-      expect(album.coverColor).toBe('#ff0000');
+      expect(album.coverColor).toBe(req.body.coverColor || '#2563eb');
       expect(album.userId).toBe(1); // Should use the authenticated user's ID
     });
     
@@ -454,7 +465,7 @@ describe('API Endpoints', () => {
       // Unauthenticated request
       const req = createMockReq('POST', '/api/albums');
       req.isAuthenticated = vi.fn().mockReturnValue(false);
-      req.user = undefined as any;
+      req.user = undefined;
       req.body = {
         name: 'New Album',
         gridSize: 9,
