@@ -30,13 +30,15 @@ vi.mock('../../../client/src/lib/queryClient', () => ({
   queryClient: new QueryClient()
 }));
 
-// Mock sets data
-vi.mock('@tanstack/react-query', async (importOriginal) => {
-  const actual = await importOriginal();
+// Mock TanStack Query
+vi.mock('@tanstack/react-query', () => {
   return {
-    ...actual,
-    useQuery: vi.fn().mockImplementation(({ queryKey }) => {
-      if (queryKey && queryKey[0] === '/api/sets') {
+    QueryClient: vi.fn(),
+    QueryClientProvider: ({ children }: any) => children,
+    useQuery: vi.fn().mockImplementation((options) => {
+      const queryKey = Array.isArray(options.queryKey) ? options.queryKey : [];
+      
+      if (queryKey[0] === '/api/sets') {
         return {
           data: [
             { id: 'base', name: 'Base Set', series: 'Base' },
@@ -47,7 +49,7 @@ vi.mock('@tanstack/react-query', async (importOriginal) => {
         };
       }
       
-      if (queryKey && queryKey[0] === '/api/search-cards') {
+      if (queryKey[0] === '/api/cards/search') {
         return {
           data: {
             cards: [
@@ -172,12 +174,24 @@ describe('CardSearchModal Component', () => {
       expect(screen.getByText('Pikachu')).toBeInTheDocument();
     });
     
-    // Click on a card
-    const pikachuCard = screen.getByText('Pikachu').closest('.card') || 
-                        screen.getByText('Pikachu').closest('div[role="button"]') ||
-                        screen.getByText('Pikachu');
-                        
-    fireEvent.click(pikachuCard);
+    // Click on a card - Handle the fact that the card is in a complex structure
+    // Find a container element that contains the text 'Pikachu' and is clickable
+    const cards = screen.getAllByRole('article') || 
+                 document.querySelectorAll('.cursor-pointer') || 
+                 document.querySelectorAll('.Card');
+    
+    // Find the card that contains 'Pikachu'
+    const pikachuCard = Array.from(cards).find(card => 
+      card.textContent?.includes('Pikachu')
+    );
+
+    // If we find the card, click it
+    if (pikachuCard) {
+      fireEvent.click(pikachuCard);
+    } else {
+      // Fallback to clicking the element that contains the text
+      fireEvent.click(screen.getByText('Pikachu'));
+    }
     
     // onCardSelect should be called with the card data
     expect(onCardSelectMock).toHaveBeenCalledWith(expect.objectContaining({
@@ -205,17 +219,29 @@ describe('CardSearchModal Component', () => {
       expect(screen.getByText('All Sets')).toBeInTheDocument();
     });
     
-    // Open the set dropdown
-    const setSelect = screen.getByText('All Sets');
-    fireEvent.click(setSelect);
+    // Handle the select trigger more robustly
+    // Looking for either the text or a select element
+    const setSelectTrigger = screen.getByRole('combobox') || 
+                            screen.getByLabelText('Filter by Set:');
     
-    // Select a set from the dropdown
-    await waitFor(() => {
-      const baseSetOption = screen.getByText('Base Set');
-      if (baseSetOption) {
-        fireEvent.click(baseSetOption);
-      }
-    });
+    if (setSelectTrigger) {
+      fireEvent.click(setSelectTrigger);
+    
+      // Wait for the select content to be visible and then select an option
+      await waitFor(() => {
+        // Try various ways to find the option
+        const baseSetOption = 
+          screen.getByText(/Base Set/i) || 
+          document.querySelector('[data-value="base"]') ||
+          Array.from(document.querySelectorAll('[role="option"]')).find(el => 
+            el.textContent?.includes('Base Set')
+          );
+          
+        if (baseSetOption) {
+          fireEvent.click(baseSetOption);
+        }
+      }, { timeout: 1000 });
+    }
     
     // Cards from the selected set should be displayed
     expect(screen.getByText('Pikachu')).toBeInTheDocument();
