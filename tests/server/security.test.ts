@@ -4,18 +4,27 @@ import { MemStorage } from '../../server/storage';
 import type { InsertAlbum, InsertPage } from '../../shared/schema';
 
 // Mock request and response objects
-function createMockReq(params = {}, body = {}, query = {}) {
+type MockRequest = {
+  params: Record<string, any>;
+  body: Record<string, any>;
+  query: Record<string, any>;
+  session: Record<string, any>;
+  isAuthenticated: ReturnType<typeof vi.fn>;
+  user: { id: number; username: string; displayName: string } | undefined;
+};
+
+function createMockReq(params = {}, body = {}, query = {}): MockRequest {
   return {
     params,
     body,
     query,
     session: {},
     isAuthenticated: vi.fn().mockReturnValue(false),
-    user: null
+    user: undefined
   };
 }
 
-function createMockAuthReq(userId = 1, username = 'testuser') {
+function createMockAuthReq(userId = 1, username = 'testuser'): MockRequest {
   return {
     params: {},
     body: {},
@@ -36,7 +45,7 @@ function createMockRes() {
 }
 
 // Sample API handlers to test
-async function createAlbum(req: Request, res: Response, storage: MemStorage) {
+async function createAlbum(req: MockRequest | Request, res: Response, storage: MemStorage) {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
@@ -83,10 +92,10 @@ async function getAlbum(req: Request, res: Response, storage: MemStorage) {
 
     // Check if user is authorized to view this album
     if (req.isAuthenticated()) {
-      // Allow access to user's own albums
+      // Allow access to user's own albums or demo albums
       const userId = (req as any).user.id;
-      if (album.userId !== userId) {
-        // Users can only view their own albums
+      if (album.userId !== userId && album.userId !== 0) {
+        // Users can only view their own albums or demo albums
         return res.status(403).json({ error: 'Forbidden' });
       }
     } else {

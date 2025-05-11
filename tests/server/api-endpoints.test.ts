@@ -318,7 +318,7 @@ describe('API Endpoints', () => {
       // Unauthenticated request
       const req = createMockReq('GET', '/api/albums');
       req.isAuthenticated = vi.fn().mockReturnValue(false);
-      req.user = null;
+      req.user = undefined as any;
       const res = createMockRes();
       
       await getAlbums(req as any, res as any, storage);
@@ -454,7 +454,7 @@ describe('API Endpoints', () => {
       // Unauthenticated request
       const req = createMockReq('POST', '/api/albums');
       req.isAuthenticated = vi.fn().mockReturnValue(false);
-      req.user = null;
+      req.user = undefined as any;
       req.body = {
         name: 'New Album',
         gridSize: 9,
