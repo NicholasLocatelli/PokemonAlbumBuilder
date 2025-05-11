@@ -228,10 +228,10 @@ export class MemStorage implements IStorage {
     console.log(`Updating page ${id} cards:`, JSON.stringify(cards));
     
     // Make sure to maintain all the cards
-    const existingCards = page.cards.filter(card => card !== null);
+    const existingCards = page.cards.filter((card: {position: number; cardId: string} | null) => card !== null);
     
     // Determine which cards to keep from existing cards (ones not being modified)
-    const cardsToKeep = existingCards.filter(existingCard => {
+    const cardsToKeep = existingCards.filter((existingCard: {position: number; cardId: string}) => {
       if (!existingCard) return false;
       
       // Keep cards whose positions aren't being updated in the new array
@@ -241,7 +241,7 @@ export class MemStorage implements IStorage {
     });
     
     // Combine the kept cards with the new ones
-    const combinedCards = [...cardsToKeep, ...cards.filter(card => card !== null)];
+    const combinedCards = [...cardsToKeep, ...cards.filter((card: {position: number; cardId: string} | null) => card !== null)];
     
     console.log(`Updated cards array:`, JSON.stringify(combinedCards));
     
@@ -607,7 +607,7 @@ export class DatabaseStorage implements IStorage {
     let updatedCards = page.cards || [];
     
     // Filter out existing cards at positions that are being updated
-    updatedCards = updatedCards.filter(existingCard => {
+    updatedCards = updatedCards.filter((existingCard: {position: number; cardId: string} | null) => {
       if (!existingCard) return false;
       
       return !nonNullCards.some(newCard => 
