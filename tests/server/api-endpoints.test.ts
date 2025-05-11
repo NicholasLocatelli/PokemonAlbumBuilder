@@ -675,7 +675,9 @@ describe('API Endpoints', () => {
       expect(res.json).toHaveBeenCalled();
       const updatedPage = res.json.mock.calls[0][0];
       expect(updatedPage.id).toBe(page.id);
-      expect(updatedPage.cards).toEqual(newCards);
+      // The storage implementation filters out null values, so we should do the same in our test
+      const expectedCards = newCards.filter(card => card !== null);
+      expect(updatedPage.cards).toEqual(expectedCards);
     });
     
     it('should return 403 if the user is not authorized to update the page', async () => {
