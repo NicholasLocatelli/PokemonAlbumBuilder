@@ -9,7 +9,7 @@ import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowUpDown, Filter } from "lucide-react";
 
 interface CardSearchModalProps {
   open: boolean;
@@ -135,9 +135,12 @@ export default function CardSearchModal({
             )}
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-3">
             <div className="grid grid-cols-[auto_1fr] gap-2 items-center">
-              <Label htmlFor="set-select" className="whitespace-nowrap">Filter by Set:</Label>
+              <Label htmlFor="set-select" className="whitespace-nowrap flex items-center gap-1">
+                <Filter className="w-4 h-4" />
+                Filter by Set:
+              </Label>
               <Select 
                 value={selectedSet} 
                 onValueChange={(value) => setSelectedSet(value === "all" ? undefined : value)}
@@ -156,10 +159,13 @@ export default function CardSearchModal({
               </Select>
             </div>
             
-            <div className="grid grid-cols-[auto_1fr] gap-2 items-center">
-              <Label htmlFor="sort-select" className="whitespace-nowrap">Sort by:</Label>
+            <div className="grid grid-cols-[auto_1fr] gap-2 items-center bg-blue-50/50 p-2 rounded-md border border-blue-200">
+              <Label htmlFor="sort-select" className="whitespace-nowrap flex items-center gap-1 font-medium text-blue-900">
+                <ArrowUpDown className="w-4 h-4" />
+                Sort by:
+              </Label>
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger id="sort-select" className="w-full">
+                <SelectTrigger id="sort-select" className="w-full bg-white border-blue-300 focus:border-blue-500">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
