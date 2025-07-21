@@ -26,6 +26,54 @@ function getSortOrderBy(sortBy: string): string {
 }
 
 /**
+ * Client-side sorting fallback for additional sort reliability
+ */
+function sortCards(cards: PokemonCard[], sortBy: string): PokemonCard[] {
+  const sorted = [...cards];
+  
+  switch (sortBy) {
+    case 'hp':
+      return sorted.sort((a, b) => {
+        const hpA = parseInt(a.hp || '0');
+        const hpB = parseInt(b.hp || '0');
+        return hpA - hpB;
+      });
+    case 'hpDesc':
+      return sorted.sort((a, b) => {
+        const hpA = parseInt(a.hp || '0');
+        const hpB = parseInt(b.hp || '0');
+        return hpB - hpA;
+      });
+    case 'number':
+      return sorted.sort((a, b) => {
+        const numA = parseInt(a.number || '0');
+        const numB = parseInt(b.number || '0');
+        return numA - numB;
+      });
+    case 'numberDesc':
+      return sorted.sort((a, b) => {
+        const numA = parseInt(a.number || '0');
+        const numB = parseInt(b.number || '0');
+        return numB - numA;
+      });
+    case 'releaseDate':
+      return sorted.sort((a, b) => {
+        const dateA = new Date(a.set?.releaseDate || '1970-01-01');
+        const dateB = new Date(b.set?.releaseDate || '1970-01-01');
+        return dateA.getTime() - dateB.getTime();
+      });
+    case 'releaseDateDesc':
+      return sorted.sort((a, b) => {
+        const dateA = new Date(a.set?.releaseDate || '1970-01-01');
+        const dateB = new Date(b.set?.releaseDate || '1970-01-01');
+        return dateB.getTime() - dateA.getTime();
+      });
+    default:
+      return sorted;
+  }
+}
+
+/**
  * Creates an advanced API query string for the Pokémon TCG API
  * This handles special cases like regional variants (Galarian, Alolan, etc.)
  * and set-specific card numbers (PAL001, SV2-023, etc.)
@@ -299,8 +347,15 @@ export class MemStorage implements IStorage {
     // Cache the cards
     cards.forEach(card => this.cardCache.set(card.id, card));
     
+    // Apply additional client-side sorting for better reliability on specific fields
+    let sortedCards = cards;
+    if (['hp', 'hpDesc', 'number', 'numberDesc'].includes(sortBy)) {
+      sortedCards = sortCards(cards, sortBy);
+      console.log(`Applied client-side sorting for ${sortBy}`);
+    }
+    
     return {
-      cards,
+      cards: sortedCards,
       totalCount: data.totalCount || cards.length
     };
   }
@@ -661,7 +716,7 @@ export class DatabaseStorage implements IStorage {
     };
     
     const response = await fetch(
-      `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(apiQuery)}&orderBy=set.releaseDate,number&page=${page}&pageSize=${pageSize}`,
+      `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(apiQuery)}&orderBy=${orderBy}&page=${page}&pageSize=${pageSize}`,
       { headers }
     );
     
@@ -677,8 +732,15 @@ export class DatabaseStorage implements IStorage {
     // Cache the cards
     cards.forEach(card => this.cardCache.set(card.id, card));
     
+    // Apply additional client-side sorting for better reliability on specific fields
+    let sortedCards = cards;
+    if (['hp', 'hpDesc', 'number', 'numberDesc'].includes(sortBy)) {
+      sortedCards = sortCards(cards, sortBy);
+      console.log(`Applied client-side sorting for ${sortBy}`);
+    }
+    
     return {
-      cards,
+      cards: sortedCards,
       totalCount: data.totalCount || cards.length
     };
   }

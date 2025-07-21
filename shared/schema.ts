@@ -25,6 +25,7 @@ export type PokemonCard = {
   };
   rarity?: string;
   number?: string;
+  hp?: string; // HP value for Pokemon cards
 };
 
 // User table for authentication
