@@ -26,6 +26,7 @@ export default function CardSearchModal({
 }: CardSearchModalProps) {
   const [search, setSearch] = useState("");
   const [selectedSet, setSelectedSet] = useState<string | undefined>(undefined);
+  const [sortBy, setSortBy] = useState<string>("releaseDate");
   const [currentPage, setCurrentPage] = useState(1);
   const [cards, setCards] = useState<PokemonCard[]>([]);
   const [totalCards, setTotalCards] = useState(0);
@@ -55,19 +56,19 @@ export default function CardSearchModal({
     }
   });
 
-  // Update search state when search or set changes
+  // Update search state when search, set, or sort changes
   useEffect(() => {
     setCurrentPage(1);
     setCards([]);
-  }, [search, selectedSet]);
+  }, [search, selectedSet, sortBy]);
 
   const searchQuery = useQuery({
-    queryKey: ["/api/cards/search", search, selectedSet, currentPage],
+    queryKey: ["/api/cards/search", search, selectedSet, sortBy, currentPage],
     queryFn: async () => {
       if (!search) return { cards: [] as PokemonCard[], totalCount: 0 };
       
-      // Construct the query URL with pagination
-      let url = `/api/cards/search?query=${encodeURIComponent(search)}&page=${currentPage}&pageSize=20`;
+      // Construct the query URL with pagination and sorting
+      let url = `/api/cards/search?query=${encodeURIComponent(search)}&page=${currentPage}&pageSize=20&sortBy=${sortBy}`;
       if (selectedSet) {
         url += `&setId=${encodeURIComponent(selectedSet)}`;
       }
@@ -134,29 +135,58 @@ export default function CardSearchModal({
             )}
           </div>
           
-          <div className="grid grid-cols-[auto_1fr] gap-2 items-center">
-            <Label htmlFor="set-select" className="whitespace-nowrap">Filter by Set:</Label>
-            <Select 
-              value={selectedSet} 
-              onValueChange={(value) => setSelectedSet(value === "all" ? undefined : value)}
-            >
-              <SelectTrigger id="set-select" className="w-full">
-                <SelectValue placeholder="All Sets" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Sets</SelectItem>
-                {setsQuery.data?.map((set) => (
-                  <SelectItem key={set.id} value={set.id}>
-                    {set.name} ({set.series})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-[auto_1fr] gap-2 items-center">
+              <Label htmlFor="set-select" className="whitespace-nowrap">Filter by Set:</Label>
+              <Select 
+                value={selectedSet} 
+                onValueChange={(value) => setSelectedSet(value === "all" ? undefined : value)}
+              >
+                <SelectTrigger id="set-select" className="w-full">
+                  <SelectValue placeholder="All Sets" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Sets</SelectItem>
+                  {setsQuery.data?.map((set) => (
+                    <SelectItem key={set.id} value={set.id}>
+                      {set.name} ({set.series})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid grid-cols-[auto_1fr] gap-2 items-center">
+              <Label htmlFor="sort-select" className="whitespace-nowrap">Sort by:</Label>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger id="sort-select" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="releaseDate">Release Date (Oldest First)</SelectItem>
+                  <SelectItem value="releaseDateDesc">Release Date (Newest First)</SelectItem>
+                  <SelectItem value="name">Name (A-Z)</SelectItem>
+                  <SelectItem value="nameDesc">Name (Z-A)</SelectItem>
+                  <SelectItem value="number">Card Number (Low-High)</SelectItem>
+                  <SelectItem value="numberDesc">Card Number (High-Low)</SelectItem>
+                  <SelectItem value="rarity">Rarity</SelectItem>
+                  <SelectItem value="rarityDesc">Rarity (Reverse)</SelectItem>
+                  <SelectItem value="hp">HP (Low-High)</SelectItem>
+                  <SelectItem value="hpDesc">HP (High-Low)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           
           {selectedSet && (
             <div className="text-xs text-muted-foreground bg-muted/30 p-2 rounded-md">
               <strong>Tip:</strong> With a set selected, you can search by card number (e.g., type "1" to find card #1 in this set)
+            </div>
+          )}
+          
+          {sortBy !== "releaseDate" && (
+            <div className="text-xs text-muted-foreground bg-blue-50 p-2 rounded-md border border-blue-200">
+              <strong>Sorting:</strong> Cards are now sorted by {sortBy.replace(/([A-Z])/g, ' $1').toLowerCase().replace('desc', '(descending)')}
             </div>
           )}
         </div>

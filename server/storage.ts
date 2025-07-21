@@ -6,6 +6,26 @@ import connectPgSimple from "connect-pg-simple";
 import createMemoryStore from "memorystore";
 
 /**
+ * Maps sort options to Pokemon TCG API orderBy parameters
+ */
+function getSortOrderBy(sortBy: string): string {
+  const sortMappings: Record<string, string> = {
+    'releaseDate': 'set.releaseDate,number',
+    'releaseDateDesc': '-set.releaseDate,number',
+    'name': 'name',
+    'nameDesc': '-name',
+    'number': 'number',
+    'numberDesc': '-number',
+    'rarity': 'rarity',
+    'rarityDesc': '-rarity',
+    'hp': 'hp',
+    'hpDesc': '-hp'
+  };
+  
+  return sortMappings[sortBy] || sortMappings.releaseDate;
+}
+
+/**
  * Creates an advanced API query string for the Pokémon TCG API
  * This handles special cases like regional variants (Galarian, Alolan, etc.)
  * and set-specific card numbers (PAL001, SV2-023, etc.)
@@ -82,7 +102,7 @@ export interface IStorage {
   updatePageCards(id: number, cards: Array<{position: number; cardId: string} | null>): Promise<Page>;
   
   // Pokemon TCG API operations
-  searchCards(query: string, setId?: string, page?: number, pageSize?: number): Promise<{cards: PokemonCard[], totalCount: number}>;
+  searchCards(query: string, setId?: string, page?: number, pageSize?: number, sortBy?: string): Promise<{cards: PokemonCard[], totalCount: number}>;
   getCard(id: string): Promise<PokemonCard | undefined>;
   getSets(): Promise<Array<{id: string; name: string; series: string}>>;
   
@@ -250,11 +270,12 @@ export class MemStorage implements IStorage {
     return updatedPage;
   }
 
-  async searchCards(query: string, setId?: string, page: number = 1, pageSize: number = 20): Promise<{cards: PokemonCard[], totalCount: number}> {
+  async searchCards(query: string, setId?: string, page: number = 1, pageSize: number = 20, sortBy: string = "releaseDate"): Promise<{cards: PokemonCard[], totalCount: number}> {
     // Use the advanced query builder to construct the API query
     const apiQuery = createAdvancedApiQuery(query, setId);
     
-    console.log(`Searching cards with query: ${apiQuery}, page: ${page}, pageSize: ${pageSize}`);
+    const orderBy = getSortOrderBy(sortBy);
+    console.log(`Searching cards with query: ${apiQuery}, page: ${page}, pageSize: ${pageSize}, sortBy: ${sortBy} (orderBy: ${orderBy})`);
     
     // Set up the headers with the API key
     const headers = {
@@ -262,7 +283,7 @@ export class MemStorage implements IStorage {
     };
     
     const response = await fetch(
-      `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(apiQuery)}&orderBy=set.releaseDate,number&page=${page}&pageSize=${pageSize}`,
+      `https://api.pokemontcg.io/v2/cards?q=${encodeURIComponent(apiQuery)}&orderBy=${orderBy}&page=${page}&pageSize=${pageSize}`,
       { headers }
     );
     
@@ -628,11 +649,11 @@ export class DatabaseStorage implements IStorage {
     return updatedPage;
   }
 
-  async searchCards(query: string, setId?: string, page: number = 1, pageSize: number = 20): Promise<{cards: PokemonCard[], totalCount: number}> {
+  async searchCards(query: string, setId?: string, page: number = 1, pageSize: number = 20, sortBy: string = "releaseDate"): Promise<{cards: PokemonCard[], totalCount: number}> {
     // Use the advanced query builder to construct the API query
     const apiQuery = createAdvancedApiQuery(query, setId);
-    
-    console.log(`Searching cards with query: ${apiQuery}, page: ${page}, pageSize: ${pageSize}`);
+    const orderBy = getSortOrderBy(sortBy);
+    console.log(`Searching cards with query: ${apiQuery}, page: ${page}, pageSize: ${pageSize}, sortBy: ${sortBy} (orderBy: ${orderBy})`);
     
     // Set up the headers with the API key
     const headers = {
