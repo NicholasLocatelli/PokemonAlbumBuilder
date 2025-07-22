@@ -171,12 +171,6 @@ export default function CardSearchModal({
                 <SelectContent>
                   <SelectItem value="releaseDate">Release Date (Oldest First)</SelectItem>
                   <SelectItem value="releaseDateDesc">Release Date (Newest First)</SelectItem>
-                  <SelectItem value="number">Card Number (Low-High)</SelectItem>
-                  <SelectItem value="numberDesc">Card Number (High-Low)</SelectItem>
-                  <SelectItem value="rarity">Rarity</SelectItem>
-                  <SelectItem value="rarityDesc">Rarity (Reverse)</SelectItem>
-                  <SelectItem value="hp">HP (Low-High)</SelectItem>
-                  <SelectItem value="hpDesc">HP (High-Low)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

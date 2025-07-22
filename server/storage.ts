@@ -11,67 +11,13 @@ import createMemoryStore from "memorystore";
 function getSortOrderBy(sortBy: string): string {
   const sortMappings: Record<string, string> = {
     'releaseDate': 'set.releaseDate,number',
-    'releaseDateDesc': '-set.releaseDate,number',
-    'name': 'name',
-    'nameDesc': '-name',
-    'number': 'number',
-    'numberDesc': '-number',
-    'rarity': 'rarity',
-    'rarityDesc': '-rarity',
-    'hp': 'hp',
-    'hpDesc': '-hp'
+    'releaseDateDesc': '-set.releaseDate,number'
   };
   
-  return sortMappings[sortBy] || sortMappings.releaseDate;
+  return sortMappings[sortBy] || 'set.releaseDate,number';
 }
 
-/**
- * Client-side sorting fallback for additional sort reliability
- */
-function sortCards(cards: PokemonCard[], sortBy: string): PokemonCard[] {
-  const sorted = [...cards];
-  
-  switch (sortBy) {
-    case 'hp':
-      return sorted.sort((a, b) => {
-        const hpA = parseInt(a.hp || '0');
-        const hpB = parseInt(b.hp || '0');
-        return hpA - hpB;
-      });
-    case 'hpDesc':
-      return sorted.sort((a, b) => {
-        const hpA = parseInt(a.hp || '0');
-        const hpB = parseInt(b.hp || '0');
-        return hpB - hpA;
-      });
-    case 'number':
-      return sorted.sort((a, b) => {
-        const numA = parseInt(a.number || '0');
-        const numB = parseInt(b.number || '0');
-        return numA - numB;
-      });
-    case 'numberDesc':
-      return sorted.sort((a, b) => {
-        const numA = parseInt(a.number || '0');
-        const numB = parseInt(b.number || '0');
-        return numB - numA;
-      });
-    case 'releaseDate':
-      return sorted.sort((a, b) => {
-        const dateA = new Date(a.set?.releaseDate || '1970-01-01');
-        const dateB = new Date(b.set?.releaseDate || '1970-01-01');
-        return dateA.getTime() - dateB.getTime();
-      });
-    case 'releaseDateDesc':
-      return sorted.sort((a, b) => {
-        const dateA = new Date(a.set?.releaseDate || '1970-01-01');
-        const dateB = new Date(b.set?.releaseDate || '1970-01-01');
-        return dateB.getTime() - dateA.getTime();
-      });
-    default:
-      return sorted;
-  }
-}
+
 
 /**
  * Creates an advanced API query string for the Pokémon TCG API
@@ -348,14 +294,8 @@ export class MemStorage implements IStorage {
     cards.forEach(card => this.cardCache.set(card.id, card));
     
     // Apply additional client-side sorting for better reliability on specific fields
-    let sortedCards = cards;
-    if (['hp', 'hpDesc', 'number', 'numberDesc'].includes(sortBy)) {
-      sortedCards = sortCards(cards, sortBy);
-      console.log(`Applied client-side sorting for ${sortBy}`);
-    }
-    
     return {
-      cards: sortedCards,
+      cards,
       totalCount: data.totalCount || cards.length
     };
   }
@@ -733,14 +673,8 @@ export class DatabaseStorage implements IStorage {
     cards.forEach(card => this.cardCache.set(card.id, card));
     
     // Apply additional client-side sorting for better reliability on specific fields
-    let sortedCards = cards;
-    if (['hp', 'hpDesc', 'number', 'numberDesc'].includes(sortBy)) {
-      sortedCards = sortCards(cards, sortBy);
-      console.log(`Applied client-side sorting for ${sortBy}`);
-    }
-    
     return {
-      cards: sortedCards,
+      cards,
       totalCount: data.totalCount || cards.length
     };
   }
