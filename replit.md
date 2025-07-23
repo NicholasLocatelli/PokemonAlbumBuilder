@@ -7,6 +7,7 @@ This is a full-stack web application for creating and managing Pokemon card albu
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Recent request: Complete user account management system with advanced authentication features (asked in Italian).
 
 ## System Architecture
 
@@ -31,15 +32,25 @@ The application follows a monorepo structure with clearly separated client and s
 ## Key Components
 
 ### Database Schema
-- **Users**: Authentication with username/password, optional display names
+- **Users**: Enhanced authentication with email/username, password hashing with bcrypt, email verification, account preferences, activity tracking
 - **Albums**: User-owned collections with customizable grid layouts (4, 9, or 12 cards)
 - **Pages**: Individual pages within albums containing card arrangements
 - **Cards**: Pokemon card data fetched from external API
+- **Email Verification Tokens**: Secure tokens for email verification process
+- **Password Reset Tokens**: Secure tokens for password recovery
+- **Social Connections**: OAuth integration for social login providers
+- **User Activity Log**: Comprehensive audit trail for security and user activity tracking
 
 ### Authentication System
-- Local username/password authentication via Passport.js
-- Session-based authentication with configurable storage
-- Password hashing using Node.js crypto.scrypt
+- Enhanced email/username authentication via Passport.js with bcrypt password hashing
+- Session-based authentication with PostgreSQL session storage
+- Email verification system with SendGrid integration
+- Password recovery with secure token-based reset system
+- Rate limiting for login/registration/password reset attempts
+- Account lockout protection against brute force attacks
+- User profile management with avatar upload support
+- Account deactivation and deletion capabilities
+- Activity logging for security audit trail
 - Protected routes for user-specific features
 
 ### Card Management

@@ -23,15 +23,16 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 const loginSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
+  usernameOrEmail: z.string().min(3, "Username or email must be at least 3 characters"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 const registerSchema = z
   .object({
     username: z.string().min(3, "Username must be at least 3 characters"),
+    email: z.string().email("Please enter a valid email address"),
     displayName: z.string().optional(),
-    password: z.string().min(6, "Password must be at least 6 characters"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -43,7 +44,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function AuthPage() {
-  const { login, register, isLoading, error: authError, user } = useAuth();
+  const { loginMutation, registerMutation, user } = useAuth();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   
@@ -62,7 +63,7 @@ export default function AuthPage() {
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      username: "",
+      usernameOrEmail: "",
       password: "",
     },
   });
@@ -71,6 +72,7 @@ export default function AuthPage() {
     resolver: zodResolver(registerSchema),
     defaultValues: {
       username: "",
+      email: "",
       displayName: "",
       password: "",
       confirmPassword: "",
@@ -155,7 +157,7 @@ export default function AuthPage() {
     setIsSubmitting(true);
     setFormError(null);
     try {
-      await login(data.username, data.password);
+      await loginMutation.mutateAsync(data);
       // No need to redirect, the component will automatically redirect when user state updates
     } catch (error) {
       // Show error in the form
@@ -173,7 +175,7 @@ export default function AuthPage() {
     setIsSubmitting(true);
     setFormError(null);
     try {
-      await register(data.username, data.password, data.displayName || undefined);
+      await registerMutation.mutateAsync(data);
       // No need to redirect, the component will automatically redirect when user state updates
     } catch (error) {
       // Show error in the form
@@ -285,15 +287,15 @@ export default function AuthPage() {
                     <motion.div variants={fieldVariants}>
                       <FormField
                         control={loginForm.control}
-                        name="username"
+                        name="usernameOrEmail"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-base">Username</FormLabel>
+                            <FormLabel className="text-base">Username o Email</FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <UserIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                 <Input 
-                                  placeholder="Enter your username" 
+                                  placeholder="Inserisci username o email" 
                                   className="pl-9" 
                                   {...field} 
                                 />
@@ -355,15 +357,15 @@ export default function AuthPage() {
                       <Button
                         type="submit"
                         className="w-full text-base py-6"
-                        disabled={isSubmitting || isLoading}
+                        disabled={isSubmitting}
                       >
                         {isSubmitting ? (
                           <>
                             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                            Logging in...
+                            Accesso...
                           </>
                         ) : (
-                          "Login"
+                          "Accedi"
                         )}
                       </Button>
                     </motion.div>
@@ -412,15 +414,39 @@ export default function AuthPage() {
                     <motion.div variants={fieldVariants}>
                       <FormField
                         control={registerForm.control}
-                        name="displayName"
+                        name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-base">Display Name (Optional)</FormLabel>
+                            <FormLabel className="text-base">Email</FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <UserIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                 <Input
-                                  placeholder="How you want to be known"
+                                  type="email"
+                                  placeholder="tua@email.com"
+                                  className="pl-9"
+                                  {...field}
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </motion.div>
+
+                    <motion.div variants={fieldVariants}>
+                      <FormField
+                        control={registerForm.control}
+                        name="displayName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-base">Nome Visualizzato (Opzionale)</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <UserIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                  placeholder="Come vuoi essere conosciuto"
                                   className="pl-9"
                                   {...field}
                                 />
@@ -514,15 +540,15 @@ export default function AuthPage() {
                       <Button
                         type="submit"
                         className="w-full text-base py-6"
-                        disabled={isSubmitting || isLoading}
+                        disabled={isSubmitting}
                       >
                         {isSubmitting ? (
                           <>
                             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                            Creating account...
+                            Creazione...
                           </>
                         ) : (
-                          "Create Account"
+                          "Crea Account"
                         )}
                       </Button>
                     </motion.div>

@@ -8,6 +8,7 @@ import Home from "@/pages/home";
 import Album from "@/pages/album";
 import AlbumCover from "@/pages/album-cover";
 import AuthPage from "@/pages/auth-page";
+import ProfilePage from "@/pages/profile";
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
@@ -16,6 +17,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/profile" component={ProfilePage} />
       <Route path="/album/:id" component={Album} />
       <Route path="/album-cover/:id" component={AlbumCover} />
       <Route component={NotFound} />

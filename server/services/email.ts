@@ -1,14 +1,14 @@
 import { MailService } from '@sendgrid/mail';
+import { v4 as uuidv4 } from 'uuid';
 
-// Safely access the API key with proper type checking
-const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-
-if (!SENDGRID_API_KEY) {
-  console.warn("SENDGRID_API_KEY environment variable is not set, email functionality may not work properly");
+if (!process.env.SENDGRID_API_KEY) {
+  console.warn("SENDGRID_API_KEY environment variable not set. Email functionality will be disabled.");
 }
 
 const mailService = new MailService();
-mailService.setApiKey(SENDGRID_API_KEY || '');
+if (process.env.SENDGRID_API_KEY) {
+  mailService.setApiKey(process.env.SENDGRID_API_KEY);
+}
 
 interface EmailParams {
   to: string;
@@ -19,42 +19,106 @@ interface EmailParams {
 }
 
 export async function sendEmail(params: EmailParams): Promise<boolean> {
+  if (!process.env.SENDGRID_API_KEY) {
+    console.warn("SendGrid API key not configured, skipping email send");
+    return false;
+  }
+
   try {
     await mailService.send({
       to: params.to,
       from: params.from,
       subject: params.subject,
-      text: params.text || '',  // Ensure not undefined
-      html: params.html || '',  // Ensure not undefined
+      text: params.text,
+      html: params.html,
     });
     return true;
   } catch (error) {
-    console.error('SendGrid email error:', error instanceof Error ? error.message : String(error));
+    console.error('SendGrid email error:', error);
     return false;
   }
 }
 
-export async function sendPasswordResetEmail(email: string, resetToken: string, appUrl: string): Promise<boolean> {
-  const resetUrl = `${appUrl}/reset-password?token=${resetToken}`;
+export async function sendEmailVerification(email: string, token: string, baseUrl: string): Promise<boolean> {
+  const verificationUrl = `${baseUrl}/verify-email?token=${token}`;
   
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Verifica la tua email</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+      <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #2563eb;">Verifica la tua email</h2>
+        <p>Grazie per esserti registrato su Pokemon Card Album!</p>
+        <p>Per completare la registrazione, clicca sul link seguente per verificare la tua email:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${verificationUrl}" 
+             style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            Verifica Email
+          </a>
+        </div>
+        <p>Se non riesci a cliccare il pulsante, copia e incolla questo link nel tuo browser:</p>
+        <p style="word-break: break-all; color: #666;">${verificationUrl}</p>
+        <p style="color: #666; font-size: 14px; margin-top: 30px;">
+          Questo link scadrà tra 24 ore. Se non hai richiesto questa verifica, puoi ignorare questa email.
+        </p>
+      </div>
+    </body>
+    </html>
+  `;
+
   return sendEmail({
     to: email,
-    from: 'noreply@pokemonbinder.com', // Use a verified sender in your SendGrid account
-    subject: 'Reset Your Pokémon Card Album Password',
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #2563EB;">Reset Your Password</h2>
-        <p>We received a request to reset your password for your Pokémon Card Album account.</p>
-        <p>To reset your password, click the button below:</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${resetUrl}" style="background-color: #2563EB; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold;">Reset Password</a>
-        </div>
-        <p>This link will expire in 1 hour.</p>
-        <p>If you didn't request a password reset, you can safely ignore this email.</p>
-        <hr style="margin: 30px 0; border: none; border-top: 1px solid #E5E7EB;" />
-        <p style="color: #6B7280; font-size: 12px;">This is an automated email from Pokémon Card Album. Please do not reply to this message.</p>
-      </div>
-    `,
-    text: `Reset Your Password: We received a request to reset your password for your Pokémon Card Album account. To reset your password, visit: ${resetUrl} This link will expire in 1 hour. If you didn't request a password reset, you can safely ignore this email.`
+    from: 'noreply@pokemoncardalabum.com', // You can configure this
+    subject: 'Verifica la tua email - Pokemon Card Album',
+    html,
+    text: `Verifica la tua email cliccando su questo link: ${verificationUrl}`
   });
+}
+
+export async function sendPasswordReset(email: string, token: string, baseUrl: string): Promise<boolean> {
+  const resetUrl = `${baseUrl}/reset-password?token=${token}`;
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Reset Password</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+      <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #2563eb;">Reset della Password</h2>
+        <p>Hai richiesto di reimpostare la password per il tuo account Pokemon Card Album.</p>
+        <p>Clicca sul link seguente per reimpostare la tua password:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${resetUrl}" 
+             style="background-color: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            Reimposta Password
+          </a>
+        </div>
+        <p>Se non riesci a cliccare il pulsante, copia e incolla questo link nel tuo browser:</p>
+        <p style="word-break: break-all; color: #666;">${resetUrl}</p>
+        <p style="color: #666; font-size: 14px; margin-top: 30px;">
+          Questo link scadrà tra 1 ora. Se non hai richiesto questo reset, puoi ignorare questa email.
+        </p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return sendEmail({
+    to: email,
+    from: 'noreply@pokemoncardalabum.com', // You can configure this
+    subject: 'Reset Password - Pokemon Card Album',
+    html,
+    text: `Reimposta la tua password cliccando su questo link: ${resetUrl}`
+  });
+}
+
+export function generateSecureToken(): string {
+  return uuidv4() + '-' + Date.now().toString(36);
 }

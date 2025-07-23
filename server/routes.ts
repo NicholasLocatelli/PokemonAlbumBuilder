@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { enhancedStorage as storage } from "./enhanced-storage";
 import { insertAlbumSchema, insertPageSchema } from "@shared/schema";
 import { z } from "zod";
 import { setupAuth } from "./auth";

@@ -20,7 +20,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { Album } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
-import UserMenu from "@/components/auth/UserMenu";
+import { UserMenu } from "@/components/UserMenu";
 
 
 export default function Home() {

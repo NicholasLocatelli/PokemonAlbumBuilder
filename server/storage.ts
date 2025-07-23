@@ -1,6 +1,30 @@
-import { albums, pages, users, type Album, type InsertAlbum, type Page, type InsertPage, type PokemonCard, type User, type InsertUser } from "@shared/schema";
+import { 
+  albums, 
+  pages, 
+  users, 
+  emailVerificationTokens,
+  passwordResetTokens,
+  socialConnections,
+  userActivityLog,
+  type Album, 
+  type InsertAlbum, 
+  type Page, 
+  type InsertPage, 
+  type PokemonCard, 
+  type User, 
+  type InsertUser,
+  type UpdateUser,
+  type EmailVerificationToken,
+  type InsertEmailVerificationToken,
+  type PasswordResetToken,
+  type InsertPasswordResetToken,
+  type SocialConnection,
+  type InsertSocialConnection,
+  type UserActivityLog,
+  type InsertUserActivityLog
+} from "@shared/schema";
 import { db, pool, isDatabaseAvailable } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, gt, lt, desc } from "drizzle-orm";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import createMemoryStore from "memorystore";
@@ -77,10 +101,42 @@ function createAdvancedApiQuery(query: string, setId?: string): string {
 }
 
 export interface IStorage {
-  // User operations
+  // Enhanced user operations
   createUser(user: InsertUser): Promise<User>;
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  updateUser(id: number, updates: UpdateUser): Promise<User | undefined>;
+  updateUserPassword(id: number, hashedPassword: string): Promise<User | undefined>;
+  incrementFailedLoginAttempts(id: number): Promise<void>;
+  resetFailedLoginAttempts(id: number): Promise<void>;
+  lockUser(id: number, lockUntil: Date): Promise<void>;
+  updateLastLogin(id: number): Promise<void>;
+  deactivateUser(id: number): Promise<void>;
+  deleteUser(id: number): Promise<void>;
+
+  // Email verification operations
+  createEmailVerificationToken(token: InsertEmailVerificationToken): Promise<EmailVerificationToken>;
+  getEmailVerificationToken(token: string): Promise<EmailVerificationToken | undefined>;
+  deleteEmailVerificationToken(id: number): Promise<void>;
+  deleteExpiredEmailVerificationTokens(): Promise<void>;
+
+  // Password reset operations
+  createPasswordResetToken(token: InsertPasswordResetToken): Promise<PasswordResetToken>;
+  getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
+  markPasswordResetTokenAsUsed(id: number): Promise<void>;
+  deletePasswordResetToken(id: number): Promise<void>;
+  deleteExpiredPasswordResetTokens(): Promise<void>;
+
+  // Social connection operations
+  createSocialConnection(connection: InsertSocialConnection): Promise<SocialConnection>;
+  getSocialConnections(userId: number): Promise<SocialConnection[]>;
+  getSocialConnectionByProvider(userId: number, provider: string): Promise<SocialConnection | undefined>;
+  deleteSocialConnection(id: number): Promise<void>;
+
+  // Activity log operations
+  logUserActivity(activity: InsertUserActivityLog): Promise<UserActivityLog>;
+  getUserActivityLog(userId: number, limit?: number): Promise<UserActivityLog[]>;
   
   // Album operations
   createAlbum(album: InsertAlbum): Promise<Album>;
@@ -108,9 +164,14 @@ export class MemStorage implements IStorage {
   private albums: Map<number, Album>;
   private pages: Map<number, Page>;
   private users: Map<number, User>;
+  private emailVerificationTokens: Map<number, EmailVerificationToken>;
+  private passwordResetTokens: Map<number, PasswordResetToken>;
+  private socialConnections: Map<number, SocialConnection>;
+  private userActivityLogs: Map<number, UserActivityLog>;
   private currentAlbumId: number;
   private currentPageId: number;
   private currentUserId: number;
+  private currentTokenId: number;
   private cardCache: Map<string, PokemonCard>;
   public sessionStore: session.Store;
   
@@ -118,6 +179,10 @@ export class MemStorage implements IStorage {
     this.albums = new Map();
     this.pages = new Map();
     this.users = new Map();
+    this.emailVerificationTokens = new Map();
+    this.passwordResetTokens = new Map();
+    this.socialConnections = new Map();
+    this.userActivityLogs = new Map();
     this.cardCache = new Map();
     this.currentAlbumId = 1;
     this.currentPageId = 1;
