@@ -424,10 +424,11 @@ export class DatabaseStorage implements IStorage {
   constructor() {
     this.cardCache = new Map();
     
-    // Always use safe memory-based session store to avoid PostgreSQL issues
-    // This completely prevents the "IDX_session_expire esiste già" error
+    // Force memory sessions in all environments to prevent PostgreSQL session errors
+    // This completely eliminates "IDX_session_expire esiste già" errors
     this.sessionStore = createSafeSessionStore();
-    console.log("Using safe in-memory session store (sessions won't persist between restarts)");
+    console.log("FORCED: Using memory-only session store (no PostgreSQL sessions)");
+    console.log("This prevents 'IDX_session_expire esiste già' errors in all environments");
   }
   
   // User operations

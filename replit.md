@@ -6,8 +6,9 @@ This is a full-stack web application for creating and managing Pokemon card albu
 
 ## User Preferences
 
-Preferred communication style: Simple, everyday language.
-Recent request: Complete user account management system with advanced authentication features (asked in Italian).
+Preferred communication style: Simple, everyday language (responds in Italian).
+Environment issues: Local Windows environment has persistent PostgreSQL session errors "IDX_session_expire esiste già" - resolved by using memory-only sessions.
+Solution implemented: Forced memory sessions in all environments to prevent PostgreSQL session table conflicts.
 
 ## System Architecture
 
