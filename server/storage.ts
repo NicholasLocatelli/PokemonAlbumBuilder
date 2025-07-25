@@ -28,6 +28,7 @@ import { eq, and, gt, lt, desc } from "drizzle-orm";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import createMemoryStore from "memorystore";
+import { createSafeSessionStore } from "./session-fix";
 
 /**
  * Maps sort options to Pokemon TCG API orderBy parameters
@@ -423,46 +424,10 @@ export class DatabaseStorage implements IStorage {
   constructor() {
     this.cardCache = new Map();
     
-    // Initialize memory store as fallback
-    const MemoryStore = createMemoryStore(session);
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000 // prune expired entries every 24h
-    });
-    
-    // Detect environment - we need a different approach for local vs. Replit environment
-    const isReplitEnvironment = process.env.REPL_ID || process.env.REPL_OWNER;
-    
-    // Always use memory store to avoid PostgreSQL session table issues
-    // This prevents the "IDX_session_expire esiste già" error in all environments
-    if (false) { // Disabled PostgreSQL sessions to prevent table creation errors
-      try {
-        // Only use PostgreSQL sessions in Replit environment where it's more stable
-        const PgSessionStore = connectPgSimple(session);
-        this.sessionStore = new PgSessionStore({
-          pool: pool as any,
-          tableName: 'user_sessions',
-          createTableIfMissing: true,
-          schemaName: 'public',
-          errorLog: (err: Error) => {
-            // Suppress "already exists" errors - these are normal
-            const errorMessage = err.message.toLowerCase();
-            if (errorMessage.includes('esiste già') || 
-                errorMessage.includes('already exists') ||
-                errorMessage.includes('idx_session_expire')) {
-              return; // Ignore these errors
-            }
-            console.error('Session store error:', err);
-          }
-        });
-        console.log("Using PostgreSQL session store (Replit environment)");
-      } catch (error) {
-        console.warn("Error with PostgreSQL session store, using memory store:", error);
-        // Memory store is already initialized above as fallback
-      }
-    } else {
-      // Use memory store for local development to avoid connection issues
-      console.log("Using in-memory session store (local development - sessions won't persist between restarts)");
-    }
+    // Always use safe memory-based session store to avoid PostgreSQL issues
+    // This completely prevents the "IDX_session_expire esiste già" error
+    this.sessionStore = createSafeSessionStore();
+    console.log("Using safe in-memory session store (sessions won't persist between restarts)");
   }
   
   // User operations
