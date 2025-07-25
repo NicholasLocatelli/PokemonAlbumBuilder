@@ -432,84 +432,36 @@ export class DatabaseStorage implements IStorage {
     // Detect environment - we need a different approach for local vs. Replit environment
     const isReplitEnvironment = process.env.REPL_ID || process.env.REPL_OWNER;
     
-    // Try to use PostgreSQL session store if database is available and in the right environment
-    if (isDatabaseAvailable && pool) {
+    // For better compatibility, always use memory store in local development
+    // PostgreSQL session store can cause issues with table initialization
+    if (isReplitEnvironment && isDatabaseAvailable && pool) {
       try {
-        // Use different configuration based on environment
-        if (isReplitEnvironment) {
-          // In Replit - use Neon PostgreSQL with connect-pg-simple
-          const PgSessionStore = connectPgSimple(session);
-          this.sessionStore = new PgSessionStore({
-            pool: pool as any,
-            tableName: 'user_sessions', // Use a different table name
-            createTableIfMissing: true,
-            schemaName: 'public',
-            errorLog: (err: Error) => {
-              // Suppress "already exists" errors in multiple languages
-              const errorMessage = err.message.toLowerCase();
-              if (errorMessage.includes('esiste già') || 
-                  errorMessage.includes('already exists') ||
-                  errorMessage.includes('idx_session_expire')) {
-                // These are expected when the table/index already exists - ignore them
-                return;
-              }
-              console.error('Session store error:', err);
+        // Only use PostgreSQL sessions in Replit environment where it's more stable
+        const PgSessionStore = connectPgSimple(session);
+        this.sessionStore = new PgSessionStore({
+          pool: pool as any,
+          tableName: 'user_sessions',
+          createTableIfMissing: true,
+          schemaName: 'public',
+          errorLog: (err: Error) => {
+            // Suppress "already exists" errors - these are normal
+            const errorMessage = err.message.toLowerCase();
+            if (errorMessage.includes('esiste già') || 
+                errorMessage.includes('already exists') ||
+                errorMessage.includes('idx_session_expire')) {
+              return; // Ignore these errors
             }
-          });
-          console.log("Using PostgreSQL session store (Replit environment)");
-        } else {
-          try {
-            // Local environment - try direct approach first
-            const PgSessionStore = connectPgSimple(session);
-            
-            // Attempt to manually create the session table to avoid issues in a separate promise
-            pool.query(`
-              CREATE TABLE IF NOT EXISTS "user_sessions" (
-                "sid" varchar NOT NULL COLLATE "default",
-                "sess" json NOT NULL,
-                "expire" timestamp(6) NOT NULL,
-                CONSTRAINT "user_sessions_pkey" PRIMARY KEY ("sid")
-              );
-              CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "user_sessions" ("expire");
-            `).then(() => {
-              console.log("Session table created or verified successfully");
-            }).catch((tableError: Error) => {
-              console.warn("Failed to create session table:", tableError);
-              // Continue anyway, the table might already exist
-            });
-            
-            // Create store with table create disabled (we'll create it separately)
-            this.sessionStore = new PgSessionStore({
-              pool: pool as any,
-              tableName: 'user_sessions',
-              createTableIfMissing: false, // We're trying to create it separately
-              errorLog: (err: Error) => {
-                // Suppress "already exists" errors in multiple languages
-                const errorMessage = err.message.toLowerCase();
-                if (errorMessage.includes('esiste già') || 
-                    errorMessage.includes('already exists') ||
-                    errorMessage.includes('idx_session_expire')) {
-                  // These are expected when the table/index already exists - ignore them
-                  return;
-                }
-                console.error('Session store error:', err);
-              }
-            });
-            console.log("Using PostgreSQL session store (local environment)");
-          } catch (pgStoreError: any) {
-            // If any error happens with the PostgreSQL store, use memory store
-            console.warn("Error with PostgreSQL session store in local environment:", pgStoreError);
-            console.log("Using in-memory session store for local development");
-            // Keep using the memory store we already initialized
+            console.error('Session store error:', err);
           }
-        }
+        });
+        console.log("Using PostgreSQL session store (Replit environment)");
       } catch (error) {
-        console.warn("Error initializing PostgreSQL session store, using memory store instead");
-        console.warn("Sessions won't persist between app restarts!");
-        // Memory store is already initialized above, so we're good
+        console.warn("Error with PostgreSQL session store, using memory store:", error);
+        // Memory store is already initialized above as fallback
       }
     } else {
-      console.log("Using in-memory session store (sessions won't persist between app restarts)");
+      // Use memory store for local development to avoid connection issues
+      console.log("Using in-memory session store (local development - sessions won't persist between restarts)");
     }
   }
   
