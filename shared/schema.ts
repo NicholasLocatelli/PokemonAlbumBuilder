@@ -7,7 +7,6 @@ import { z } from "zod";
 export type PokemonCard = {
   id: string;
   name: string;
-  artist?: string; // Artist/illustrator of the card
   images: {
     small: string;
     large: string;
