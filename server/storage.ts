@@ -804,10 +804,10 @@ try {
     console.log("Using PostgreSQL database storage");
   } else {
     storageImplementation = new MemStorage();
-    console.log("Using in-memory storage - DATABASE_URL not configured");
+    console.log("Using in-memory storage");
   }
 } catch (error) {
-  console.warn("Error initializing database storage, falling back to in-memory storage:", error);
+  console.warn("Error initializing storage, falling back to in-memory storage:", error);
   storageImplementation = new MemStorage();
 }
 
