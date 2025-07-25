@@ -26,6 +26,7 @@ export default function CardSearchModal({
 }: CardSearchModalProps) {
   const [search, setSearch] = useState("");
   const [selectedSet, setSelectedSet] = useState<string | undefined>(undefined);
+  const [artistSearch, setArtistSearch] = useState("");
   const [sortBy, setSortBy] = useState<string>("releaseDate");
   const [currentPage, setCurrentPage] = useState(1);
   const [cards, setCards] = useState<PokemonCard[]>([]);
@@ -56,28 +57,31 @@ export default function CardSearchModal({
     }
   });
 
-  // Update search state when search, set, or sort changes
+  // Update search state when search, set, artist, or sort changes
   useEffect(() => {
     setCurrentPage(1);
     setCards([]);
-  }, [search, selectedSet, sortBy]);
+  }, [search, selectedSet, artistSearch, sortBy]);
 
   const searchQuery = useQuery({
-    queryKey: ["/api/cards/search", search, selectedSet, sortBy, currentPage],
+    queryKey: ["/api/cards/search", search, selectedSet, artistSearch, sortBy, currentPage],
     queryFn: async () => {
-      if (!search) return { cards: [] as PokemonCard[], totalCount: 0 };
+      if (!search && !artistSearch) return { cards: [] as PokemonCard[], totalCount: 0 };
       
-      // Construct the query URL with pagination and sorting
-      let url = `/api/cards/search?query=${encodeURIComponent(search)}&page=${currentPage}&pageSize=20&sortBy=${sortBy}`;
+      // Construct the query URL with pagination, sorting, and artist filter
+      let url = `/api/cards/search?query=${encodeURIComponent(search || '*')}&page=${currentPage}&pageSize=20&sortBy=${sortBy}`;
       if (selectedSet) {
         url += `&setId=${encodeURIComponent(selectedSet)}`;
+      }
+      if (artistSearch) {
+        url += `&artist=${encodeURIComponent(artistSearch)}`;
       }
       
       const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to search cards");
       return res.json() as Promise<{ cards: PokemonCard[], totalCount: number }>;
     },
-    enabled: search.length > 0
+    enabled: search.length > 0 || artistSearch.length > 0
   });
 
   // Update cards state when search results change
@@ -159,6 +163,20 @@ export default function CardSearchModal({
               </Select>
             </div>
             
+            <div className="grid grid-cols-[auto_1fr] gap-2 items-center">
+              <Label htmlFor="artist-input" className="whitespace-nowrap flex items-center gap-1">
+                <Filter className="w-4 h-4" />
+                Filter by Artist:
+              </Label>
+              <Input
+                id="artist-input"
+                placeholder="e.g., Ken Sugimori, Atsuko Nishida..."
+                value={artistSearch}
+                onChange={(e) => setArtistSearch(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            
             <div className="grid grid-cols-[auto_1fr] gap-2 items-center bg-blue-50/50 p-2 rounded-md border border-blue-200">
               <Label htmlFor="sort-select" className="whitespace-nowrap flex items-center gap-1 font-medium text-blue-900">
                 <ArrowUpDown className="w-4 h-4" />
@@ -182,6 +200,12 @@ export default function CardSearchModal({
             </div>
           )}
           
+          {artistSearch && (
+            <div className="text-xs text-muted-foreground bg-green-50 p-2 rounded-md border border-green-200">
+              <strong>Artist Filter:</strong> Showing only cards illustrated by "{artistSearch}"
+            </div>
+          )}
+          
           {sortBy !== "releaseDate" && (
             <div className="text-xs text-muted-foreground bg-blue-50 p-2 rounded-md border border-blue-200">
               <strong>Sorting:</strong> Cards are now sorted by {sortBy.replace(/([A-Z])/g, ' $1').toLowerCase().replace('desc', '(descending)')}
@@ -196,7 +220,7 @@ export default function CardSearchModal({
             </div>
           ) : cards.length === 0 ? (
             <div className="flex items-center justify-center h-32 text-muted-foreground">
-              {search ? "No cards found" : "Type to search for cards"}
+              {search || artistSearch ? "No cards found" : "Type to search for cards"}
             </div>
           ) : (
             <div className="space-y-4">
@@ -222,12 +246,17 @@ export default function CardSearchModal({
                           />
                         </div>
                       )}
-                      {card.rarity && (
-                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-1 text-center backdrop-blur-sm truncate">
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-1 text-center backdrop-blur-sm">
+                        <div className="truncate">
                           {card.number && <span className="mr-1">#{card.number}</span>}
-                          {card.rarity}
+                          {card.rarity && <span>{card.rarity}</span>}
                         </div>
-                      )}
+                        {card.artist && (
+                          <div className="truncate text-gray-300 text-[0.65rem]">
+                            by {card.artist}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </Card>
                 ))}

@@ -49,11 +49,13 @@ function getSortOrderBy(sortBy: string): string {
  * This handles special cases like regional variants (Galarian, Alolan, etc.)
  * and set-specific card numbers (PAL001, SV2-023, etc.)
  */
-function createAdvancedApiQuery(query: string, setId?: string): string {
+function createAdvancedApiQuery(query: string, setId?: string, artist?: string): string {
   // Check if query looks like a set-specific card number (e.g., PAL001, pal-001)
   // Matches patterns like: PAL001, pal-001, PAL-001, SV2-023, etc.
   const setSpecificRegex = /^([a-zA-Z]+)[-]?(\d+)$/;
   const setSpecificMatch = query.match(setSpecificRegex);
+  
+  let apiQuery = '';
   
   if (setSpecificMatch) {
     // Extract the potential set code and number
@@ -61,16 +63,16 @@ function createAdvancedApiQuery(query: string, setId?: string): string {
     
     if (setId) {
       // If a set is already selected, just search by number in that set
-      return `number:${cardNumber} set.id:${setId}`;
+      apiQuery = `number:${cardNumber} set.id:${setId}`;
     } else {
       // Search by card number across all sets
-      return `number:${cardNumber}`;
+      apiQuery = `number:${cardNumber}`;
     }
   } 
   // Check if query is numeric for set-specific number search
   else if (setId && /^\d+$/.test(query)) {
     // If we have a set ID and the query is a number, search by card number within that set
-    return `number:${query} set.id:${setId}`;
+    apiQuery = `number:${query} set.id:${setId}`;
   } 
   // Handle searches for Pokémon variants like "Galarian Ponyta"
   else if (query.toLowerCase().includes('galarian') || 
@@ -79,26 +81,29 @@ function createAdvancedApiQuery(query: string, setId?: string): string {
            query.toLowerCase().includes('paldean')) {
     // For regional variants, split query and search for each term
     const terms = query.split(' ').filter(term => term.length > 0);
-    let apiQuery = terms.map(term => `name:${term}`).join(' ');
+    apiQuery = terms.map(term => `name:${term}`).join(' ');
     
     // Add set filter if provided
     if (setId) {
       apiQuery += ` set.id:${setId}`;
     }
-    
-    return apiQuery;
   } 
   else {
     // For regular searches, use name search with wildcard
-    let apiQuery = `name:${query}*`;
+    apiQuery = `name:${query}*`;
 
     // Add set filter if provided
     if (setId) {
       apiQuery += ` set.id:${setId}`;
     }
-    
-    return apiQuery;
   }
+  
+  // Add artist filter if provided
+  if (artist) {
+    apiQuery += ` artist:"${artist}"`;
+  }
+  
+  return apiQuery;
 }
 
 export interface IStorage {
@@ -153,7 +158,7 @@ export interface IStorage {
   updatePageCards(id: number, cards: Array<{position: number; cardId: string} | null>): Promise<Page>;
   
   // Pokemon TCG API operations
-  searchCards(query: string, setId?: string, page?: number, pageSize?: number, sortBy?: string): Promise<{cards: PokemonCard[], totalCount: number}>;
+  searchCards(query: string, setId?: string, artist?: string, page?: number, pageSize?: number, sortBy?: string): Promise<{cards: PokemonCard[], totalCount: number}>;
   getCard(id: string): Promise<PokemonCard | undefined>;
   getSets(): Promise<Array<{id: string; name: string; series: string}>>;
   
@@ -330,12 +335,12 @@ export class MemStorage implements IStorage {
     return updatedPage;
   }
 
-  async searchCards(query: string, setId?: string, page: number = 1, pageSize: number = 20, sortBy: string = "releaseDate"): Promise<{cards: PokemonCard[], totalCount: number}> {
+  async searchCards(query: string, setId?: string, artist?: string, page: number = 1, pageSize: number = 20, sortBy: string = "releaseDate"): Promise<{cards: PokemonCard[], totalCount: number}> {
     // Use the advanced query builder to construct the API query
-    const apiQuery = createAdvancedApiQuery(query, setId);
+    const apiQuery = createAdvancedApiQuery(query, setId, artist);
     
     const orderBy = getSortOrderBy(sortBy);
-    console.log(`Searching cards with query: ${apiQuery}, page: ${page}, pageSize: ${pageSize}, sortBy: ${sortBy} (orderBy: ${orderBy})`);
+    console.log(`Searching cards with query: ${apiQuery}${artist ? `, artist: ${artist}` : ''}, page: ${page}, pageSize: ${pageSize}, sortBy: ${sortBy} (orderBy: ${orderBy})`);
     
     // Set up the headers with the API key
     const headers = {
@@ -669,11 +674,11 @@ export class DatabaseStorage implements IStorage {
     return updatedPage;
   }
 
-  async searchCards(query: string, setId?: string, page: number = 1, pageSize: number = 20, sortBy: string = "releaseDate"): Promise<{cards: PokemonCard[], totalCount: number}> {
+  async searchCards(query: string, setId?: string, artist?: string, page: number = 1, pageSize: number = 20, sortBy: string = "releaseDate"): Promise<{cards: PokemonCard[], totalCount: number}> {
     // Use the advanced query builder to construct the API query
-    const apiQuery = createAdvancedApiQuery(query, setId);
+    const apiQuery = createAdvancedApiQuery(query, setId, artist);
     const orderBy = getSortOrderBy(sortBy);
-    console.log(`Searching cards with query: ${apiQuery}, page: ${page}, pageSize: ${pageSize}, sortBy: ${sortBy} (orderBy: ${orderBy})`);
+    console.log(`Searching cards with query: ${apiQuery}${artist ? `, artist: ${artist}` : ''}, page: ${page}, pageSize: ${pageSize}, sortBy: ${sortBy} (orderBy: ${orderBy})`);
     
     // Set up the headers with the API key
     const headers = {
