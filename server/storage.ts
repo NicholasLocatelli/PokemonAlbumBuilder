@@ -444,7 +444,17 @@ export class DatabaseStorage implements IStorage {
             tableName: 'user_sessions', // Use a different table name
             createTableIfMissing: true,
             schemaName: 'public',
-            errorLog: console.error
+            errorLog: (err: Error) => {
+              // Suppress "already exists" errors in multiple languages
+              const errorMessage = err.message.toLowerCase();
+              if (errorMessage.includes('esiste già') || 
+                  errorMessage.includes('already exists') ||
+                  errorMessage.includes('idx_session_expire')) {
+                // These are expected when the table/index already exists - ignore them
+                return;
+              }
+              console.error('Session store error:', err);
+            }
           });
           console.log("Using PostgreSQL session store (Replit environment)");
         } else {
@@ -473,7 +483,17 @@ export class DatabaseStorage implements IStorage {
               pool: pool as any,
               tableName: 'user_sessions',
               createTableIfMissing: false, // We're trying to create it separately
-              errorLog: console.error
+              errorLog: (err: Error) => {
+                // Suppress "already exists" errors in multiple languages
+                const errorMessage = err.message.toLowerCase();
+                if (errorMessage.includes('esiste già') || 
+                    errorMessage.includes('already exists') ||
+                    errorMessage.includes('idx_session_expire')) {
+                  // These are expected when the table/index already exists - ignore them
+                  return;
+                }
+                console.error('Session store error:', err);
+              }
             });
             console.log("Using PostgreSQL session store (local environment)");
           } catch (pgStoreError: any) {
