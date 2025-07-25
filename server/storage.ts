@@ -795,16 +795,19 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// For local development, use MemStorage to avoid database connection issues
-// To use database, ensure PostgreSQL is installed and DATABASE_URL is properly configured
+// Use DatabaseStorage if DATABASE_URL is available, otherwise use MemStorage
 let storageImplementation: IStorage;
 
 try {
-  // Always use MemStorage for local development unless explicitly configured
-  storageImplementation = new MemStorage();
-  console.log("Using in-memory storage (recommended for local development)");
+  if (isDatabaseAvailable) {
+    storageImplementation = new DatabaseStorage();
+    console.log("Using PostgreSQL database storage");
+  } else {
+    storageImplementation = new MemStorage();
+    console.log("Using in-memory storage - DATABASE_URL not configured");
+  }
 } catch (error) {
-  console.warn("Error initializing storage:", error);
+  console.warn("Error initializing database storage, falling back to in-memory storage:", error);
   storageImplementation = new MemStorage();
 }
 
