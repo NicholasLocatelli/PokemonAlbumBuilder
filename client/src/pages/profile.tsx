@@ -13,7 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { User, Lock, Mail, Shield, Activity, Trash2, UserX, Camera, Save, Eye, EyeOff } from "lucide-react";
+import { User, Lock, Mail, Shield, Activity, Trash2, UserX, Camera, Save, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 
 interface ProfileUpdate {
@@ -284,6 +284,14 @@ export default function ProfilePage() {
   return (
     <div className="container mx-auto p-4 max-w-4xl">
       <div className="mb-6">
+        <div className="flex items-center gap-4 mb-4">
+          <Link href="/">
+            <Button variant="outline" size="sm" className="flex items-center gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Indietro
+            </Button>
+          </Link>
+        </div>
         <h1 className="text-3xl font-bold">Il mio profilo</h1>
         <p className="text-muted-foreground">Gestisci le impostazioni del tuo account</p>
       </div>
@@ -304,7 +312,7 @@ export default function ProfilePage() {
           </TabsTrigger>
           <TabsTrigger value="danger" className="flex items-center gap-2">
             <Trash2 className="h-4 w-4" />
-            Zone Pericolosa
+            Elimina Account
           </TabsTrigger>
         </TabsList>
 
@@ -587,7 +595,7 @@ export default function ProfilePage() {
         <TabsContent value="danger" className="space-y-6">
           <Card className="border-destructive">
             <CardHeader>
-              <CardTitle className="text-destructive">Zone Pericolosa</CardTitle>
+              <CardTitle className="text-destructive">Elimina Account</CardTitle>
               <CardDescription>
                 Azioni irreversibili che influenzano il tuo account.
               </CardDescription>
