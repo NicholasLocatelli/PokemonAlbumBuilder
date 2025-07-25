@@ -432,9 +432,9 @@ export class DatabaseStorage implements IStorage {
     // Detect environment - we need a different approach for local vs. Replit environment
     const isReplitEnvironment = process.env.REPL_ID || process.env.REPL_OWNER;
     
-    // For better compatibility, always use memory store in local development
-    // PostgreSQL session store can cause issues with table initialization
-    if (isReplitEnvironment && isDatabaseAvailable && pool) {
+    // Always use memory store to avoid PostgreSQL session table issues
+    // This prevents the "IDX_session_expire esiste già" error in all environments
+    if (false) { // Disabled PostgreSQL sessions to prevent table creation errors
       try {
         // Only use PostgreSQL sessions in Replit environment where it's more stable
         const PgSessionStore = connectPgSimple(session);
