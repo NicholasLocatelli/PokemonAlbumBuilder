@@ -424,11 +424,33 @@ export class DatabaseStorage implements IStorage {
   constructor() {
     this.cardCache = new Map();
     
-    // Force memory sessions in all environments to prevent PostgreSQL session errors
-    // This completely eliminates "IDX_session_expire esiste già" errors
-    this.sessionStore = createSafeSessionStore();
-    console.log("FORCED: Using memory-only session store (no PostgreSQL sessions)");
-    console.log("This prevents 'IDX_session_expire esiste già' errors in all environments");
+    // Check if user wants to force memory sessions to avoid PostgreSQL session errors
+    const forceMemorySessions = process.env.USE_MEMORY_SESSIONS === 'true';
+    const isReplitEnvironment = process.env.REPL_ID || process.env.REPL_OWNER;
+    
+    if (forceMemorySessions || isReplitEnvironment) {
+      // Use memory sessions (recommended to avoid "IDX_session_expire esiste già" errors)
+      this.sessionStore = createSafeSessionStore();
+      console.log("Using memory-only session store (PostgreSQL used only for data)");
+      if (forceMemorySessions) {
+        console.log("Memory sessions forced via USE_MEMORY_SESSIONS=true");
+      }
+    } else {
+      // Try PostgreSQL sessions (user's choice, may cause errors in some environments)
+      try {
+        const PgSessionStore = connectPgSimple(session);
+        this.sessionStore = new PgSessionStore({
+          pool: pool as any,
+          tableName: 'user_sessions',
+          createTableIfMissing: true,
+          schemaName: 'public'
+        });
+        console.log("Using PostgreSQL session store (may cause errors in some environments)");
+      } catch (error) {
+        console.warn("PostgreSQL session store failed, falling back to memory:", error);
+        this.sessionStore = createSafeSessionStore();
+      }
+    }
   }
   
   // User operations
